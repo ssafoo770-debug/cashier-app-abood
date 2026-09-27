@@ -492,35 +492,66 @@
             </div>
         </div>
 
-        <!-- 4. المشتريات (إدخال مشتريات بأسعارها لتنزل للمحل) -->
+        <!-- 4. المشتريات (فاتورة مشتريات متعددة المواد) -->
         <div id="purchases-view" class="view-section">
             <div class="content-box">
-                <h2>📦 إدخال فاتورة مشتريات جديدة (تنزل للمحل مباشرة)</h2>
-                <form id="add-product-form" onsubmit="handleAddProduct(event)">
+                <h2>📦 إدخال فاتورة مشتريات جديدة (أكثر من مادة)</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">أضف المواد التي تحتويها الفاتورة لتطابق إجمالي التكلفة مع الفاتورة الورقية التي لديك.</p>
+                
+                <form id="add-purchase-item-form" onsubmit="handleAddToPurchaseInvoice(event)" style="margin-top: 1.2rem; background: var(--table-header); padding: 1rem; border-radius: 10px;">
+                    <h4 style="margin-bottom: 0.8rem; color: var(--accent);">إضافة مادة للفاتورة الحالية</h4>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>اسم المنتج</label>
-                            <input type="text" id="prod-name" placeholder="مثال: نسكافيه" required>
+                            <input type="text" id="p-item-name" placeholder="مثال: نسكافيه" required>
                         </div>
                         <div class="form-group">
-                            <label>سعر التكلفة (د.ع)</label>
-                            <input type="number" id="prod-cost" placeholder="مثال: 4000" min="0" required>
+                            <label>سعر التكلفة للمفرد (د.ع)</label>
+                            <input type="number" id="p-item-cost" placeholder="مثال: 4000" min="0" required>
                         </div>
                         <div class="form-group">
-                            <label>سعر البيع (د.ع)</label>
-                            <input type="number" id="prod-price" placeholder="مثال: 6000" min="0" required>
+                            <label>سعر البيع للمفرد (د.ع)</label>
+                            <input type="number" id="p-item-price" placeholder="مثال: 6000" min="0" required>
                         </div>
                         <div class="form-group">
-                            <label>الكمية المضافة للمحل</label>
-                            <input type="number" id="prod-qty" placeholder="مثال: 10" min="1" required>
+                            <label>الكمية</label>
+                            <input type="number" id="p-item-qty" placeholder="مثال: 10" min="1" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ حفظ المشتريات وإرسالها للمحل</button>
+                    <button type="submit" class="btn btn-warning" style="margin-top: 1rem;">+ إضافة المادة لقائمة الفاتورة</button>
                 </form>
+
+                <!-- جدول المواد المؤقتة للفاتورة الحالية -->
+                <div style="margin-top: 1.5rem;">
+                    <h3>تفاصيل مواد الفاتورة الحالية:</h3>
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>اسم المنتج</th>
+                                <th>سعر التكلفة</th>
+                                <th>سعر البيع</th>
+                                <th>الكمية</th>
+                                <th>الإجمالي (تكلفة × كمية)</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchase-invoice-items-body">
+                            <tr><td colspan="6" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; background: rgba(22, 163, 74, 0.1); padding: 1.2rem; border-radius: 10px; border: 1px solid var(--green);">
+                        <div>
+                            <span style="font-size: 0.9rem; color: #94a3b8; display: block;">سعر إجمالي الفاتورة (التكلفة الكلية):</span>
+                            <strong id="purchase-invoice-total-val" style="font-size: 1.5rem; color: var(--green);">0 د.ع</strong>
+                        </div>
+                        <button class="btn btn-green" style="padding: 1rem 2rem; font-size: 1.1rem;" onclick="savePurchaseInvoice()">💾 اعتماد وحفظ الفاتورة (أرسل للمحل)</button>
+                    </div>
+                </div>
             </div>
 
             <div class="content-box">
-                <h2>📋 سجل المشتريات الحالية في النظام</h2>
+                <h2>📋 سجل المواد المضافة في المحل</h2>
                 <table class="custom-table">
                     <thead>
                         <tr>
@@ -675,6 +706,7 @@
         let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
         let invoiceCounter = parseInt(localStorage.getItem('cashier_inv_counter')) || 1;
         let cart = [];
+        let currentPurchaseInvoice = []; // المواد المؤقتة للفاتورة الجديدة
 
         let savedSession = localStorage.getItem('cashier_current_user');
         let currentUser = savedSession ? JSON.parse(savedSession) : null;
@@ -946,27 +978,93 @@
             });
         }
 
-        // --- المشتريات (تُرحّل مباشرة للمحل) ---
-        function handleAddProduct(e) {
-            e.preventDefault();
-            const name = document.getElementById('prod-name').value.trim();
-            const cost = parseFloat(document.getElementById('prod-cost').value);
-            const price = parseFloat(document.getElementById('prod-price').value);
-            const qty = parseInt(document.getElementById('prod-qty').value);
+        // --- المشتريات (فاتورة متعددة المواد) ---
+        function handleToPurchaseInvoice(e) { } // dummy
 
-            let existing = products.find(p => p.name === name);
+        function handleAddToPurchaseInvoice(e) {
+            e.preventDefault();
+            const name = document.getElementById('p-item-name').value.trim();
+            const cost = parseFloat(document.getElementById('p-item-cost').value);
+            const price = parseFloat(document.getElementById('p-item-price').value);
+            const qty = parseInt(document.getElementById('p-item-qty').value);
+
+            let existing = currentPurchaseInvoice.find(i => i.name === name);
             if (existing) {
                 existing.cost = cost;
                 existing.price = price;
                 existing.qty += qty;
             } else {
-                products.push({ id: products.length + 1, name, cost, price, qty });
+                currentPurchaseInvoice.push({ name, cost, price, qty });
             }
 
+            document.getElementById('add-purchase-item-form').reset();
+            renderPurchaseInvoiceTable();
+        }
+
+        function removePurchaseInvoiceItem(name) {
+            currentPurchaseInvoice = currentPurchaseInvoice.filter(i => i.name !== name);
+            renderPurchaseInvoiceTable();
+        }
+
+        function renderPurchaseInvoiceTable() {
+            const tbody = document.getElementById('purchase-invoice-items-body');
+            tbody.innerHTML = '';
+
+            if (currentPurchaseInvoice.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>';
+                document.getElementById('purchase-invoice-total-val').innerText = '0 د.ع';
+                return;
+            }
+
+            let totalInvoiceCost = 0;
+            currentPurchaseInvoice.forEach(item => {
+                let itemTotal = item.cost * item.qty;
+                totalInvoiceCost += itemTotal;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${item.name}</strong></td>
+                        <td>${item.cost.toLocaleString()} د.ع</td>
+                        <td>${item.price.toLocaleString()} د.ع</td>
+                        <td>${item.qty}</td>
+                        <td><strong style="color:var(--accent);">${itemTotal.toLocaleString()} د.ع</strong></td>
+                        <td>
+                            <button class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size:0.75rem;" onclick="removePurchaseInvoiceItem('${item.name}')">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('purchase-invoice-total-val').innerText = `${totalInvoiceCost.toLocaleString()} د.ع`;
+        }
+
+        function savePurchaseInvoice() {
+            if (currentPurchaseInvoice.length === 0) {
+                alert('الفاتورة فارغة! أضف مواد أولاً.');
+                return;
+            }
+
+            currentPurchaseInvoice.forEach(item => {
+                let existingProd = products.find(p => p.name === item.name);
+                if (existingProd) {
+                    existingProd.cost = item.cost;
+                    existingProd.price = item.price;
+                    existingProd.qty += item.qty;
+                } else {
+                    products.push({
+                        id: products.length + 1,
+                        name: item.name,
+                        cost: item.cost,
+                        price: item.price,
+                        qty: item.qty
+                    });
+                }
+            });
+
             saveData();
-            document.getElementById('add-product-form').reset();
-            alert('تم حفظ المشتريات وإرسالها للمحل مباشرة بنجاح!');
+            currentPurchaseInvoice = [];
+            renderPurchaseInvoiceTable();
             renderPurchasesTable();
+            alert('تم اعتماد وحفظ الفاتورة بنجاح وإرسال المواد للمحل!');
         }
 
         function deleteProduct(id) {
@@ -1199,7 +1297,7 @@
                 const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.json` ? `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt` : '';
+                a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt`;
                 a.click();
 
                 salesHistory = [];
@@ -1227,7 +1325,7 @@
                         users = importedData.users;
                         warehouseItems = importedData.warehouseItems || [];
                         products = importedData.products;
-                        salesHistory = importedData.salesHistory || [];
+                        salesHistory = importedData.salesHistory || automaticallyConverted();
                         invoiceCounter = importedData.invoiceCounter || 1;
                         saveData();
                         alert('تم استرجاع النسخة الاحتياطية بنجاح!');
@@ -1237,6 +1335,7 @@
             };
             fileReader.readAsText(event.target.files[0]);
         }
+        function automaticallyConverted() { return []; }
     </script>
 </body>
 </html>
