@@ -156,7 +156,6 @@
             transition: all 0.3s ease;
         }
 
-        /* تصميم السلة في وضع المرتجع */
         .cart-container.return-mode {
             background-color: #fef2f2;
             border-color: var(--danger);
@@ -340,18 +339,73 @@
             align-items: center;
         }
 
-        .cancel-btn {
-            background: var(--danger);
-            color: white;
+        .action-btn {
             border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            margin-left: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.85;
+        }
+
+        .edit-btn { background: #eab308; color: white; }
+        .cancel-btn { background: var(--danger); color: white; }
+
+        /* نافذة المودال للتعديل */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            animation: popIn 0.2s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.8rem;
+        }
+
+        .modal-header h3 { color: var(--primary); font-size: 1.2rem; }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
         }
     </style>
 </head>
@@ -377,7 +431,6 @@
                 <div>
                     <h3 id="cart-title">الفاتورة الحالية (مبيعات)</h3>
                     
-                    <!-- تحويل وضع السلة بين مبيعات ومرتجع -->
                     <div class="mode-toggle-container">
                         <button class="mode-btn active-sale" id="sale-mode-btn" onclick="setCartMode('sale')">بيع</button>
                         <button class="mode-btn" id="return-mode-btn" onclick="setCartMode('return')">مرتجع ↩</button>
@@ -424,7 +477,7 @@
                 <button class="btn" style="margin-top: 1rem;" onclick="addProduct()">حفظ فاتورة المشتريات</button>
             </div>
 
-            <h3>سجل فواتير المشتريات المضافة (دائمة ولن تحذف بالـ Refresh)</h3>
+            <h3>سجل فواتير المشتريات المضافة</h3>
             <table>
                 <thead>
                     <tr>
@@ -433,7 +486,7 @@
                         <th>سعر البيع</th>
                         <th>الكمية المشتراة</th>
                         <th>إجمالي التكلفة</th>
-                        <th>إلغاء/حذف الفاتورة</th>
+                        <th>إجراءات (تعديل / حذف)</th>
                     </tr>
                 </thead>
                 <tbody id="purchase-history-table"></tbody>
@@ -480,12 +533,43 @@
 
     </div>
 
+    <!-- نافذة منبثقة لتعديل فاتورة المشتريات -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>تعديل فاتورة مشتريات</h3>
+                <button class="action-btn cancel-btn" onclick="closeEditModal()">✕</button>
+            </div>
+            <input type="hidden" id="edit-purchase-id">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>اسم المنتج</label>
+                <input type="text" id="edit-prod-name">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>سعر التكلفة (الشراء)</label>
+                <input type="number" id="edit-prod-cost">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>سعر البيع</label>
+                <input type="number" id="edit-prod-price">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>الكمية المشتراة</label>
+                <input type="number" id="edit-prod-qty">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background: #64748b;" onclick="closeEditModal()">إلغاء</button>
+                <button class="btn btn-green" onclick="savePurchaseEdit()">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let products = JSON.parse(localStorage.getItem('pos_products')) || [];
         let purchaseHistory = JSON.parse(localStorage.getItem('pos_purchase_history')) || [];
         let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
         let cart = [];
-        let cartMode = 'sale'; // 'sale' أو 'return'
+        let cartMode = 'sale';
 
         function consolidateProducts() {
             let consolidated = [];
@@ -599,7 +683,8 @@
                         <td>${ph.qty}</td>
                         <td><strong>${totalCost.toLocaleString()} د.ع</strong></td>
                         <td>
-                            <button class="cancel-btn" title="حذف الفاتورة" onclick="deletePurchaseInvoice(${ph.id})">✕</button>
+                            <button class="action-btn edit-btn" title="تعديل الفاتورة" onclick="openEditModal(${ph.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="action-btn cancel-btn" title="حذف الفاتورة" onclick="deletePurchaseInvoice(${ph.id})">✕</button>
                         </td>
                     </tr>
                 `;
@@ -636,6 +721,63 @@
             document.getElementById('prod-cost').value = '';
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-qty').value = '';
+        }
+
+        function openEditModal(purchaseId) {
+            const purchase = purchaseHistory.find(ph => ph.id === purchaseId);
+            if(!purchase) return;
+
+            document.getElementById('edit-purchase-id').value = purchase.id;
+            document.getElementById('edit-prod-name').value = purchase.name;
+            document.getElementById('edit-prod-cost').value = purchase.cost;
+            document.getElementById('edit-prod-price').value = purchase.price;
+            document.getElementById('edit-prod-qty').value = purchase.qty;
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        function savePurchaseEdit() {
+            const purchaseId = parseInt(document.getElementById('edit-purchase-id').value);
+            const newName = document.getElementById('edit-prod-name').value.trim();
+            const newCost = parseFloat(document.getElementById('edit-prod-cost').value);
+            const newPrice = parseFloat(document.getElementById('edit-prod-price').value);
+            const newQty = parseInt(document.getElementById('edit-prod-qty').value);
+
+            if(!newName || isNaN(newCost) || isNaN(newPrice) || isNaN(newQty)) {
+                alert('يرجى أدخال جميع المعلومات بشكل صحيح');
+                return;
+            }
+
+            const purchase = purchaseHistory.find(ph => ph.id === purchaseId);
+            if(!purchase) return;
+
+            const oldName = purchase.name;
+            const oldQty = purchase.qty;
+
+            // تحديث الفاتورة
+            purchase.name = newName;
+            purchase.cost = newCost;
+            purchase.price = newPrice;
+            purchase.qty = newQty;
+
+            // تحديث المنتجات في المخزن
+            const prod = products.find(p => p.name.trim() === oldName.trim());
+            if(prod) {
+                const qtyDifference = newQty - oldQty;
+                prod.qty += qtyDifference;
+                if(prod.qty < 0) prod.qty = 0;
+                prod.name = newName;
+                prod.cost = newCost;
+                prod.price = newPrice;
+            }
+
+            saveProducts();
+            savePurchases();
+            closeEditModal();
         }
 
         function deletePurchaseInvoice(purchaseId) {
@@ -747,7 +889,7 @@
                     if(cartMode === 'sale') {
                         prod.qty -= item.qty;
                     } else {
-                        prod.qty += item.qty; // إضافة للمخزن في حالة المرتجع
+                        prod.qty += item.qty;
                     }
                     totalVal += item.price * item.qty;
                     profitVal += (item.price - item.cost) * item.qty;
@@ -773,7 +915,6 @@
             saveProducts();
             saveSales();
 
-            // العودة إلى وضع البيع تلقائياً بعد المرتجع
             if(cartMode === 'return') {
                 setCartMode('sale');
             }
