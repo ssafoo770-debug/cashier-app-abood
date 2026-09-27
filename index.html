@@ -284,7 +284,6 @@
 
     <div class="main-content">
         
-        <!-- قسم نقطة البيع -->
         <div id="pos-view" class="view-section active">
             <div class="products-container">
                 <h3>المنتجات المتاحة</h3>
@@ -310,7 +309,6 @@
             </div>
         </div>
 
-        <!-- قسم المخزن -->
         <div id="inventory-view" class="view-section" style="flex-direction: column;">
             <div class="form-card">
                 <h3>إضافة منتج جديد للمخزن</h3>
@@ -351,7 +349,6 @@
             </table>
         </div>
 
-        <!-- قسم تقارير مبيعات اليوم -->
         <div id="reports-view" class="view-section" style="flex-direction: column;">
             <h3>تقارير ومبيعات اليوم (<span id="current-date"></span>)</h3>
             
@@ -388,11 +385,7 @@
     </div>
 
     <script>
-        let products = JSON.parse(localStorage.getItem('pos_products')) || [
-            { id: 1, name: 'ماء 500مل', cost: 150, price: 250, qty: 100 },
-            { id: 2, name: 'عصير برتقال', cost: 700, price: 1000, qty: 40 }
-        ];
-
+        let products = JSON.parse(localStorage.getItem('pos_products')) || [];
         let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
         let cart = [];
 
@@ -419,12 +412,16 @@
                 document.getElementById('reports-view').classList.add('active');
                 renderReports();
             }
-            if(event) event.currentTarget.classList.add('active');
+            if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
         }
 
         function renderProducts() {
             const grid = document.getElementById('pos-products');
             grid.innerHTML = '';
+            if(products.length === 0) {
+                grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات بالمخزن حالياً، اضغط على (إدارة المخزن) لإضافة المنتجات.</p>';
+                return;
+            }
             products.forEach(p => {
                 grid.innerHTML += `
                     <div class="product-card" onclick="addToCart(${p.id})">
@@ -480,6 +477,7 @@
             document.getElementById('prod-cost').value = '';
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-qty').value = '';
+            alert('تمت إضافة المنتج بنجاح!');
         }
 
         function deleteProduct(id) {
@@ -558,7 +556,6 @@
             document.getElementById('cart-total-price').innerText = `${total.toLocaleString()} د.ع`;
         }
 
-        // إتمام البيع والتحديث الفوري بدون ريفرش
         function checkout() {
             if(cart.length === 0) {
                 alert('السلة فارغة!');
@@ -591,13 +588,11 @@
                 profit: saleProfit
             });
 
-            // تصفير الفاتورة وتحديث الواجهة فوراً
             cart = [];
             saveProducts();
             saveSales();
             renderCart();
 
-            // تنبيه فوري بالنجاح
             const alertBox = document.getElementById('checkout-alert');
             alertBox.style.display = 'block';
             setTimeout(() => {
