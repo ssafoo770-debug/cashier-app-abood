@@ -16,6 +16,24 @@
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
+            --border: #cbd5e1;
+            --sidebar-bg: #0f172a;
+            --table-header: #f1f5f9;
+        }
+
+        /* متغيرات الوضع الداكن */
+        body.dark-mode {
+            --primary: #1e293b;
+            --accent: #3b82f6;
+            --green: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #090d16;
+            --card: #111827;
+            --text: #f3f4f6;
+            --border: #374151;
+            --sidebar-bg: #030712;
+            --table-header: #1f2937;
         }
 
         * {
@@ -23,6 +41,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Tajawal', sans-serif;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         body {
@@ -56,9 +75,10 @@
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             text-align: center;
+            color: #1e293b;
         }
 
-        .login-card h2 { margin-bottom: 1.5rem; color: var(--primary); }
+        .login-card h2 { margin-bottom: 1.5rem; color: #0f172a; }
 
         /* القائمة الجانبية */
         .sidebar {
@@ -67,7 +87,7 @@
             right: 0;
             width: 70px;
             height: 100vh;
-            background: var(--primary);
+            background: var(--sidebar-bg);
             color: white;
             padding: 1.2rem 0.5rem;
             display: flex;
@@ -97,7 +117,7 @@
         .sidebar-brand h2 { font-size: 1.1rem; }
 
         .user-badge {
-            background: #1e293b;
+            background: rgba(255, 255, 255, 0.05);
             padding: 0.6rem;
             border-radius: 8px;
             font-size: 0.85rem;
@@ -127,7 +147,7 @@
 
         .menu-btn i { font-size: 1.3rem; min-width: 35px; text-align: center; }
         .menu-btn:hover, .menu-btn.active { background: var(--accent); color: white; }
-        .menu-btn.logout { margin-top: auto; background: #334155; color: #f8fafc; }
+        .menu-btn.logout { margin-top: auto; background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
         .menu-btn.logout:hover { background: var(--danger); }
 
         /* المحتوى الرئيسي */
@@ -150,6 +170,7 @@
 
         .product-card {
             background: var(--card);
+            color: var(--text);
             padding: 1.2rem 1rem;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -161,14 +182,15 @@
         }
 
         .product-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-        .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--primary); }
+        .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--text); }
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
-        .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.4rem; }
+        .product-card .qty { color: #94a3b8; font-size: 0.85rem; margin-top: 0.4rem; }
 
         /* سلة الفاتورة */
         .cart-container {
             flex: 1;
             background: var(--card);
+            color: var(--text);
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -186,15 +208,15 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.8rem 0;
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid var(--border);
         }
 
         .cart-item-controls { display: flex; align-items: center; gap: 8px; }
-        .qty-btn { background: #cbd5e1; border: none; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .cart-summary { border-top: 2px dashed #cbd5e1; padding-top: 0.8rem; }
+        .qty-btn { background: var(--border); color: var(--text); border: none; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .cart-summary { border-top: 2px dashed var(--border); padding-top: 0.8rem; }
         .cart-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 1rem; }
-        .cart-row.total { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem; margin-bottom: 1rem; }
-        .discount-input-group input { width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; text-align: center; }
+        .cart-row.total { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-top: 0.5rem; margin-bottom: 1rem; }
+        .discount-input-group input { width: 90px; padding: 0.4rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; font-weight: bold; text-align: center; }
 
         .btn {
             background: var(--accent);
@@ -214,10 +236,11 @@
         .btn:hover { opacity: 0.9; }
         .btn-green { background: var(--green); }
         .btn-danger { background: var(--danger); }
-        .btn-warning { background: var(--warning); }
+        .btn-warning { background: var(--warning); color: #fff; }
 
         .content-box {
             background: var(--card);
+            color: var(--text);
             padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -226,22 +249,45 @@
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
         .form-group { display: flex; flex-direction: column; gap: 0.4rem; text-align: right; }
-        .form-group label { font-size: 0.9rem; font-weight: bold; color: #475569; }
-        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+        .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--text); }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; font-size: 1rem; }
 
-        .custom-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        .custom-table th, .custom-table td { padding: 0.8rem 1rem; text-align: right; border-bottom: 1px solid #e2e8f0; }
-        .custom-table th { background-color: #f1f5f9; color: var(--primary); font-weight: bold; }
+        .custom-table { width: 100%; border-collapse: collapse; margin-top: 1rem; color: var(--text); }
+        .custom-table th, .custom-table td { padding: 0.8rem 1rem; text-align: right; border-bottom: 1px solid var(--border); }
+        .custom-table th { background-color: var(--table-header); color: var(--text); font-weight: bold; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
-        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.2rem; }
+        .stat-card { background: var(--card); color: var(--text); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.2rem; }
         .stat-card i { font-size: 2.2rem; padding: 1rem; border-radius: 10px; }
-        .stat-card.blue i { background: #e0f2fe; color: #0284c7; }
-        .stat-card.green i { background: #dcfce7; color: #15803d; }
-        .stat-card.purple i { background: #f3e8ff; color: #9333ea; }
-        .stat-info h4 { font-size: 0.9rem; color: #64748b; margin-bottom: 0.3rem; }
-        .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+        .stat-card.blue i { background: rgba(2, 132, 199, 0.15); color: #0284c7; }
+        .stat-card.green i { background: rgba(21, 128, 61, 0.15); color: var(--green); }
+        .stat-card.purple i { background: rgba(147, 51, 234, 0.15); color: #9333ea; }
+        .stat-info h4 { font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.3rem; }
+        .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--text); }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+        /* سويتش تبديل الوضع الداكن */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+          background-color: #ccc;
+          transition: .4s;
+          border-radius: 34px;
+        }
+        .slider:before {
+          position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(26px); }
     </style>
 </head>
 <body>
@@ -441,6 +487,21 @@
 
         <!-- 4. واجهة الإعدادات والصلاحيات -->
         <div id="settings-view" class="view-section">
+            <!-- قسم مظهر البرنامج (الوضع الداكن) -->
+            <div class="content-box">
+                <h2>🎨 مظهر واجهة البرنامج (الوضع الداكن)</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.2rem;">
+                    <div>
+                        <strong>تفعيل الوضع الداكن (Dark Mode)</strong>
+                        <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.2rem;">تحويل ألوان البرنامج إلى الشاشة المعتمة المريحة للعين</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
             <!-- إدارة المستخدمين -->
             <div class="content-box">
                 <h2>👥 قائمة المستخدمين وتعديل الحسابات</h2>
@@ -513,9 +574,24 @@
         let invoiceCounter = parseInt(localStorage.getItem('cashier_inv_counter')) || 1;
         let cart = [];
 
-        // استرجاع المستخدم الحالي من الذاكرة لكي لا يخرج عند التحديث (Refresh)
         let savedSession = localStorage.getItem('cashier_current_user');
         let currentUser = savedSession ? JSON.parse(savedSession) : null;
+
+        // تطبيق الوضع الداكن عند التحميل إذا كان مفعلاً مسبقاً
+        if (localStorage.getItem('cashier_dark_mode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.getElementById('darkModeToggle').checked;
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('cashier_dark_mode', 'true');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('cashier_dark_mode', 'false');
+            }
+        }
 
         function saveData() {
             localStorage.setItem('cashier_users', JSON.stringify(users));
@@ -529,8 +605,12 @@
             }
         }
 
-        // عند فتح الصفحة يتم التحقق هل تم تسجيل الدخول مسبقاً؟
         window.onload = function() {
+            // مزامنة حالة زر الوضع الداكن مع الذاكرة
+            const isDarkSaved = localStorage.getItem('cashier_dark_mode') === 'true';
+            const toggleElement = document.getElementById('darkModeToggle');
+            if (toggleElement) toggleElement.checked = isDarkSaved;
+
             if (currentUser) {
                 document.getElementById('login-overlay').style.display = 'none';
                 applyRolePermissions();
@@ -548,7 +628,7 @@
             const found = users.find(user => user.username === u && user.password === p);
             if (found) {
                 currentUser = found;
-                saveData(); // حفظ الجلسة لكي تستمر حتى بعد الـ Refresh
+                saveData(); 
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('login-username').value = '';
                 document.getElementById('login-password').value = '';
@@ -561,7 +641,7 @@
         function logout() {
             if (confirm('هل تريد حقاً تسجيل الخروج من البرنامج؟')) {
                 currentUser = null;
-                localStorage.removeItem('cashier_current_user'); // مسح الجلسة تماماً عند الضغط على زر الخروج
+                localStorage.removeItem('cashier_current_user'); 
                 document.getElementById('login-overlay').style.display = 'flex';
             }
         }
@@ -626,7 +706,6 @@
             targetUser.password = newPass;
             targetUser.role = newRole;
 
-            // إذا تم تعديل المستخدم الحالي نفسه، نقوم بتحديث جلسة العمل
             if (currentUser && currentUser.username === oldUsername) {
                 currentUser = targetUser;
             }
@@ -656,7 +735,7 @@
                     <tr>
                         <td><strong>${u.username}</strong></td>
                         <td><code>${u.password}</code></td>
-                        <td>${u.role === 'admin' ? '<span style="color:blue;font-weight:bold;">' + (u.username === 'designer' ? 'مصمم' : 'مدير') + '</span>' : 'موظف'}</td>
+                        <td>${u.role === 'admin' ? '<span style="color:var(--accent);font-weight:bold;">' + (u.username === 'designer' ? 'مصمم' : 'مدير') + '</span>' : 'موظف'}</td>
                         <td>
                             <button class="btn btn-warning" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="editUser('${u.username}')">تعديل</button>
                             ${u.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser('${u.username}')">حذف</button>` : ''}
@@ -685,7 +764,10 @@
             if (tabId === 'pos') renderPOS();
             if (tabId === 'inventory') renderInventoryTable();
             if (tabId === 'reports') renderReports();
-            if (tabId === 'settings') renderUsersTable();
+            if (tabId === 'settings') {
+                renderUsersTable();
+                document.getElementById('darkModeToggle').checked = localStorage.getItem('cashier_dark_mode') === 'true';
+            }
         }
 
         function handleAddProduct(e) {
@@ -728,7 +810,7 @@
                         <td><strong>${p.name}</strong></td>
                         <td>${p.cost.toLocaleString()} د.ع</td>
                         <td>${p.price.toLocaleString()} د.ع</td>
-                        <td><span style="color: ${p.qty > 0 ? 'green' : 'red'}; font-weight:bold;">${p.qty}</span></td>
+                        <td><span style="color: ${p.qty > 0 ? 'var(--green)' : 'var(--danger)'}; font-weight:bold;">${p.qty}</span></td>
                         <td>
                             <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteProduct(${p.id})">حذف</button>
                         </td>
@@ -869,7 +951,7 @@
                 <div style="text-align: center; margin-top: 3rem; color: var(--green);">
                     <i class="fa-solid fa-circle-check" style="font-size: 3.5rem; margin-bottom: 1rem;"></i>
                     <h3 style="font-size: 1.2rem; color: var(--green);">تمت العملية بنجاح!</h3>
-                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">تم حفظ الفاتورة وتحديث المخزن</p>
+                    <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.5rem;">تم حفظ الفاتورة وتحديث المخزن</p>
                 </div>
             `;
 
@@ -913,7 +995,7 @@
                         <td>${s.items}</td>
                         <td>${s.discount.toLocaleString()} د.ع</td>
                         <td><strong>${s.total.toLocaleString()} د.ع</strong></td>
-                        <td style="color: green; font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
+                        <td style="color: var(--green); font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
                     </tr>
                 `;
             });
@@ -939,7 +1021,7 @@
                     reportContent += `فاتورة #${s.id} - ${s.time} | المواد: ${s.items} | المجموع: ${s.total} د.ع | الربح: ${s.profit} د.ع\n`;
                 });
 
-                const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+                const blob = newBlob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
                 a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt`;
