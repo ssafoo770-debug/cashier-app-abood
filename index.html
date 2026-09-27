@@ -604,7 +604,7 @@
                     <thead>
                         <tr>
                             <th>رقم الفاتورة</th>
-                            <th>الوقت</th>
+                            <th>الوقت والتاريخ</th>
                             <th>تفاصيل المواد</th>
                             <th>الخصم</th>
                             <th>المبلغ الإجمالي</th>
@@ -612,6 +612,55 @@
                         </tr>
                     </thead>
                     <tbody id="sales-history-body"></tbody>
+                </table>
+            </div>
+
+            <!-- قسم التقرير الشهري والمخصص الجديد -->
+            <div class="content-box" style="border: 2px dashed var(--accent);">
+                <h2>📅 التقرير المخصص (من تاريخ إلى تاريخ)</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">اختر الفترة المطلوبة لعرض المبيعات والأرباح بدقة دون تغيير البيانات.</p>
+                
+                <div class="form-grid" style="align-items: flex-end;">
+                    <div class="form-group">
+                        <label>من تاريخ:</label>
+                        <input type="date" id="report-start-date" onchange="filterCustomReport()">
+                    </div>
+                    <div class="form-group">
+                        <label>إلى تاريخ:</label>
+                        <input type="date" id="report-end-date" onchange="filterCustomReport()">
+                    </div>
+                    <div>
+                        <button class="btn" style="width: 100%; height: 44px;" onclick="resetCustomReportDates()">إلغاء التصفية</button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; background: var(--table-header); padding: 1rem; border-radius: 8px;">
+                    <div>
+                        <span style="font-size: 0.85rem; color: #94a3b8;">إجمالي مبيعات الفترة:</span>
+                        <div id="custom-report-sales" style="font-size: 1.2rem; font-weight: bold; color: var(--green);">0 د.ع</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.85rem; color: #94a3b8;">صافي أرباح الفترة:</span>
+                        <div id="custom-report-profit" style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">0 د.ع</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.85rem; color: #94a3b8;">عدد الفواتير بالفترة:</span>
+                        <div id="custom-report-count" style="font-size: 1.2rem; font-weight: bold;">0</div>
+                    </div>
+                </div>
+
+                <table class="custom-table" style="margin-top: 1rem;">
+                    <thead>
+                        <tr>
+                            <th>رقم الفاتورة</th>
+                            <th>التاريخ والوقت</th>
+                            <th>المبلغ الإجمالي</th>
+                            <th>الربح</th>
+                        </tr>
+                    </thead>
+                    <tbody id="custom-report-table-body">
+                        <tr><td colspan="4" style="text-align:center; color:#94a3b8;">الرجاء تحديد الفترة لعرض التفاصيل</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -755,128 +804,42 @@
             const found = users.find(user => user.username === u && user.password === p);
             if (found) {
                 currentUser = found;
-                saveData(); 
+                saveData();
                 document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('login-username').value = '';
-                document.getElementById('login-password').value = '';
                 applyRolePermissions();
             } else {
-                alert('اسم المستخدم أو كلمة السر غير صحيحة!');
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
             }
         }
 
         function logout() {
-            if (confirm('هل تريد حقاً تسجيل الخروج من البرنامج؟')) {
-                currentUser = null;
-                localStorage.removeItem('cashier_current_user'); 
-                document.getElementById('login-overlay').style.display = 'flex';
-            }
+            currentUser = null;
+            saveData();
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
         }
 
         function applyRolePermissions() {
             if (!currentUser) return;
-
             document.getElementById('current-user-name').innerText = currentUser.username;
-            document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? (currentUser.username === 'designer' ? 'مصمم' : 'مدير') : 'موظف';
+            document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير' : 'موظف';
 
             const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => {
-                el.style.display = (currentUser.role === 'admin') ? '' : 'none';
-            });
-
-            switchTab('pos');
-        }
-
-        function handleAddUser(e) {
-            e.preventDefault();
-            const u = document.getElementById('new-username').value.trim();
-            const p = document.getElementById('new-password').value.trim();
-            const r = document.getElementById('new-role').value;
-
-            if (users.find(user => user.username === u)) {
-                alert('اسم المستخدم موجود مسبقاً!');
-                return;
+            if (currentUser.role === 'staff') {
+                adminElements.forEach(el => el.style.display = 'none');
+                switchTab('pos');
+            } else {
+                adminElements.forEach(el => el.style.display = '');
             }
-
-            users.push({ username: u, password: p, role: r });
-            saveData();
-            document.getElementById('add-user-form').reset();
-            renderUsersTable();
-            alert('تمت إضافة المستخدم بنجاح!');
-        }
-
-        function editUser(oldUsername) {
-            let targetUser = users.find(u => u.username === oldUsername);
-            if (!targetUser) return;
-
-            let newName = prompt("تعديل اسم المستخدم (اليوزر):", targetUser.username);
-            if (!newName) return;
-            newName = newName.trim();
-
-            if (newName !== oldUsername && users.find(u => u.username === newName)) {
-                alert("اسم المستخدم الجديد موجود بالفعل!");
-                return;
-            }
-
-            let newPass = prompt("تعديل كلمة السر (الباسورد):", targetUser.password);
-            if (!newPass) return;
-            newPass = newPass.trim();
-
-            let newRole = prompt("تحديد الصلاحية (اكتب admin للمدير أو staff للموظف):", targetUser.role);
-            if (newRole !== 'admin' && newRole !== 'staff') {
-                alert("الصلاحية غير صحيحة! يجب إدخال admin أو staff.");
-                return;
-            }
-
-            targetUser.username = newName;
-            targetUser.password = newPass;
-            targetUser.role = newRole;
-
-            if (currentUser && currentUser.username === oldUsername) {
-                currentUser = targetUser;
-            }
-
-            saveData();
-            renderUsersTable();
-            alert("تم تعديل بيانات المستخدم بنجاح!");
-        }
-
-        function deleteUser(username) {
-            if (username === 'admin') {
-                alert('لا يمكنك حذف المدير الرئيسي للنظام!');
-                return;
-            }
-            if (confirm(`هل أنت تأكد من حذف المستخدم ${username}؟`)) {
-                users = users.filter(u => u.username !== username);
-                saveData();
-                renderUsersTable();
-            }
-        }
-
-        function renderUsersTable() {
-            const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = '';
-            users.forEach(u => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${u.username}</strong></td>
-                        <td><code>${u.password}</code></td>
-                        <td>${u.role === 'admin' ? '<span style="color:var(--accent);font-weight:bold;">' + (u.username === 'designer' ? 'مصمم' : 'مدير') + '</span>' : 'موظف'}</td>
-                        <td>
-                            <button class="btn btn-warning" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="editUser('${u.username}')">تعديل</button>
-                            ${u.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser('${u.username}')">حذف</button>` : ''}
-                        </td>
-                    </tr>
-                `;
-            });
+            refreshAllViews();
         }
 
         function switchTab(tabId) {
-            if (currentUser && currentUser.role !== 'admin' && tabId !== 'pos') {
-                alert('عذراً! هذه الخانة مخصصة للمدير فقط.');
+            if (currentUser && currentUser.role === 'staff' && tabId !== 'pos') {
+                alert('عذراً، الصلاحية المتاحة لك هي نقطة البيع فقط.');
                 return;
             }
-
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -886,91 +849,231 @@
             if (targetView) targetView.classList.add('active');
             if (targetBtn) targetBtn.classList.add('active');
 
-            if (tabId === 'pos') renderPOS();
-            if (tabId === 'warehouse') renderWarehouseTable();
-            if (tabId === 'shop') renderShopTable();
-            if (tabId === 'purchases') renderPurchasesTable();
-            if (tabId === 'reports') renderReports();
-            if (tabId === 'settings') {
-                renderUsersTable();
-                document.getElementById('darkModeToggle').checked = localStorage.getItem('cashier_dark_mode') === 'true';
-            }
+            refreshAllViews();
         }
 
+        function refreshAllViews() {
+            renderPosProducts();
+            renderCart();
+            renderWarehouseTable();
+            renderShopTable();
+            renderPurchaseInvoiceTable();
+            renderPurchasesLogTable();
+            renderReports();
+            renderUsersTable();
+        }
+
+        // --- 1. نقطة البيع (POS) ---
+        function renderPosProducts() {
+            const grid = document.getElementById('pos-products-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            products.forEach(prod => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <h4>${prod.name}</h4>
+                    <div class="price">${prod.price} د.ع</div>
+                    <div class="qty">متوفر: ${prod.qty}</div>
+                `;
+                card.onclick = () => addToCart(prod.id);
+                grid.appendChild(card);
+            });
+        }
+
+        function addToCart(productId) {
+            const prod = products.find(p => p.id === productId);
+            if (!prod || prod.qty <= 0) {
+                alert('المنتج نفد من المحل أو غير متوفر!');
+                return;
+            }
+            const existing = cart.find(item => item.id === productId);
+            if (existing) {
+                if (existing.qty < prod.qty) {
+                    existing.qty++;
+                } else {
+                    alert('لا توجد كمية إضافية متوفرة في المحل!');
+                }
+            } else {
+                cart.push({ id: prod.id, name: prod.name, price: prod.price, cost: prod.cost, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function changeCartQty(productId, delta) {
+            const item = cart.find(i => i.id === productId);
+            if (!item) return;
+            const prod = products.find(p => p.id === productId);
+
+            const newQty = item.qty + delta;
+            if (newQty > 0) {
+                if (newQty <= prod.qty) {
+                    item.qty = newQty;
+                } else {
+                    alert('الكمية المطلوبة تتجاوز المتوفر بالمحل!');
+                }
+            } else {
+                cart = cart.filter(i => i.id !== productId);
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            if (!container) return;
+
+            if (cart.length === 0) {
+                container.innerHTML = `<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>`;
+                renderCartSummary();
+                return;
+            }
+
+            container.innerHTML = '';
+            cart.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'cart-item';
+                row.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small style="color: #94a3b8;">${item.price} د.ع × ${item.qty}</small>
+                    </div>
+                    <div class="cart-item-controls">
+                        <button class="qty-btn" onclick="changeCartQty(${item.id}, -1)">-</button>
+                        <span>${item.qty}</span>
+                        <button class="qty-btn" onclick="changeCartQty(${item.id}, 1)">+</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+            renderCartSummary();
+        }
+
+        function renderCartSummary() {
+            let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let discountInput = document.getElementById('cart-discount');
+            let discount = discountInput && currentUser && currentUser.role === 'admin' ? parseFloat(discountInput.value) || 0 : 0;
+            
+            let total = subtotal - discount;
+            if (total < 0) total = 0;
+
+            document.getElementById('cart-subtotal').innerText = subtotal + ' د.ع';
+            document.getElementById('cart-total-price').innerText = total + ' د.ع';
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert('السلة فارغة، لا يمكن إتمام البيع!');
+                return;
+            }
+
+            let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let discountInput = document.getElementById('cart-discount');
+            let discount = discountInput && currentUser && currentUser.role === 'admin' ? parseFloat(discountInput.value) || 0 : 0;
+            let total = subtotal - discount;
+            if (total < 0) total = 0;
+
+            let totalCost = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
+            let invoiceProfit = total - totalCost;
+
+            // خصم الكميات من منتجات المحل
+            cart.forEach(cartItem => {
+                let prod = products.find(p => p.id === cartItem.id);
+                if (prod) {
+                    prod.qty -= cartItem.qty;
+                }
+            });
+
+            let now = new Date();
+            let dateString = now.toISOString().slice(0, 10); // تنسيق YYYY-MM-DD
+            let timeString = now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+
+            salesHistory.push({
+                invoiceNo: invoiceCounter++,
+                date: dateString,
+                time: `${dateString} ${timeString}`,
+                items: [...cart],
+                discount: discount,
+                total: total,
+                profit: invoiceProfit
+            });
+
+            cart = [];
+            if (discountInput) discountInput.value = '0';
+            saveData();
+            refreshAllViews();
+            alert('تم إتمام عملية البيع بنجاح وطباعة الفاتورة!');
+        }
+
+        // --- 2. المخزن ---
         function handleAddWarehouseItem(e) {
             e.preventDefault();
             const name = document.getElementById('wh-name').value.trim();
             const qty = parseInt(document.getElementById('wh-qty').value);
 
-            let existing = warehouseItems.find(item => item.name === name);
+            let existing = warehouseItems.find(w => w.name === name);
             if (existing) {
                 existing.qty += qty;
             } else {
-                warehouseItems.push({ id: warehouseItems.length + 1, name, qty });
+                let newId = warehouseItems.length > 0 ? Math.max(...warehouseItems.map(w => w.id)) + 1 : 1;
+                warehouseItems.push({ id: newId, name: name, qty: qty });
             }
 
-            saveData();
             document.getElementById('add-warehouse-form').reset();
+            saveData();
             renderWarehouseTable();
-            alert('تمت إضافة المنتج إلى المخزن بنجاح!');
+            alert('تمت إضافة البضاعة للمخزن بنجاح!');
+        }
+
+        function renderWarehouseTable() {
+            const tbody = document.getElementById('warehouse-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            warehouseItems.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td><strong>${item.qty}</strong></td>
+                    <td>
+                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteWarehouseItem(${item.id})">حذف</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function deleteWarehouseItem(id) {
-            if (confirm('هل تريد حذف هذا المنتج من المخزن؟')) {
-                warehouseItems = warehouseItems.filter(i => i.id !== id);
+            if (confirm('هل أنت متأكد من حذف هذا المنتج من المخزن؟')) {
+                warehouseItems = warehouseItems.filter(w => w.id !== id);
                 saveData();
                 renderWarehouseTable();
             }
         }
 
-        function renderWarehouseTable() {
-            const tbody = document.getElementById('warehouse-table-body');
-            tbody.innerHTML = '';
-            if (warehouseItems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">المخزن فارغ تماماً</td></tr>';
-                return;
-            }
-            warehouseItems.forEach((item, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${item.name}</strong></td>
-                        <td><span style="color: var(--green); font-weight:bold;">${item.qty}</span></td>
-                        <td>
-                            <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteWarehouseItem(${item.id})">حذف</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
+        // --- 3. المحل ---
         function renderShopTable() {
             const tbody = document.getElementById('shop-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
             
-            let totalCostVal = 0;
-            products.forEach(p => {
-                totalCostVal += (p.cost * p.qty);
-            });
-            document.getElementById('shop-total-cost-val').innerText = `${totalCostVal.toLocaleString()} د.ع`;
-
-            if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">المحل فارغ تماماً</td></tr>';
-                return;
-            }
-            products.forEach((p, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${p.cost.toLocaleString()} د.ع</td>
-                        <td>${p.price.toLocaleString()} د.ع</td>
-                        <td><span style="color: ${p.qty > 0 ? 'var(--green)' : 'var(--danger)'}; font-weight:bold;">${p.qty}</span></td>
-                    </tr>
+            let totalCapitalCost = 0;
+            products.forEach((prod, index) => {
+                totalCapitalCost += (prod.cost * prod.qty);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${prod.name}</td>
+                    <td>${prod.cost} د.ع</td>
+                    <td>${prod.price} د.ع</td>
+                    <td><strong>${prod.qty}</strong></td>
                 `;
+                tbody.appendChild(tr);
             });
+            const costValElem = document.getElementById('shop-total-cost-val');
+            if (costValElem) costValElem.innerText = totalCapitalCost + ' د.ع';
         }
 
+        // --- 4. المشتريات وفاتورة الشراء ---
         function handleAddToPurchaseInvoice(e) {
             e.preventDefault();
             const name = document.getElementById('p-item-name').value.trim();
@@ -978,352 +1081,315 @@
             const price = parseFloat(document.getElementById('p-item-price').value);
             const qty = parseInt(document.getElementById('p-item-qty').value);
 
-            let existing = currentPurchaseInvoice.find(i => i.name === name);
-            if (existing) {
-                existing.cost = cost;
-                existing.price = price;
-                existing.qty += qty;
-            } else {
-                currentPurchaseInvoice.push({ name, cost, price, qty });
-            }
+            currentPurchaseInvoice.push({
+                name: name,
+                cost: cost,
+                price: price,
+                qty: qty
+            });
 
             document.getElementById('add-purchase-item-form').reset();
             renderPurchaseInvoiceTable();
         }
 
-        function removePurchaseInvoiceItem(name) {
-            currentPurchaseInvoice = currentPurchaseInvoice.filter(i => i.name !== name);
-            renderPurchaseInvoiceTable();
-        }
-
         function renderPurchaseInvoiceTable() {
             const tbody = document.getElementById('purchase-invoice-items-body');
-            tbody.innerHTML = '';
-
+            if (!tbody) return;
+            
             if (currentPurchaseInvoice.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>`;
                 document.getElementById('purchase-invoice-total-val').innerText = '0 د.ع';
                 return;
             }
 
+            tbody.innerHTML = '';
             let totalInvoiceCost = 0;
-            currentPurchaseInvoice.forEach(item => {
+            currentPurchaseInvoice.forEach((item, index) => {
                 let itemTotal = item.cost * item.qty;
                 totalInvoiceCost += itemTotal;
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${item.name}</strong></td>
-                        <td>${item.cost.toLocaleString()} د.ع</td>
-                        <td>${item.price.toLocaleString()} د.ع</td>
-                        <td>${item.qty}</td>
-                        <td><strong style="color:var(--accent);">${itemTotal.toLocaleString()} د.ع</strong></td>
-                        <td>
-                            <button class="btn btn-danger" style="padding: 0.2rem 0.5rem; font-size:0.75rem;" onclick="removePurchaseInvoiceItem('${item.name}')">حذف</button>
-                        </td>
-                    </tr>
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.cost} د.ع</td>
+                    <td>${item.price} د.ع</td>
+                    <td>${item.qty}</td>
+                    <td>${itemTotal} د.ع</td>
+                    <td><button class="btn btn-danger" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="removePurchaseInvoiceItem(${index})">حذف</button></td>
                 `;
+                tbody.appendChild(tr);
             });
+            document.getElementById('purchase-invoice-total-val').innerText = totalInvoiceCost + ' د.ع';
+        }
 
-            document.getElementById('purchase-invoice-total-val').innerText = `${totalInvoiceCost.toLocaleString()} د.ع`;
+        function removePurchaseInvoiceItem(index) {
+            currentPurchaseInvoice.splice(index, 1);
+            renderPurchaseInvoiceTable();
         }
 
         function savePurchaseInvoice() {
             if (currentPurchaseInvoice.length === 0) {
-                alert('الفاتورة فارغة! أضف مواد أولاً.');
+                alert('الفاتورة فارغة!');
                 return;
             }
 
-            currentPurchaseInvoice.forEach(item => {
-                let existingProd = products.find(p => p.name === item.name);
+            currentPurchaseInvoice.forEach(invItem => {
+                let existingProd = products.find(p => p.name === invItem.name);
                 if (existingProd) {
-                    existingProd.cost = item.cost;
-                    existingProd.price = item.price;
-                    existingProd.qty += item.qty;
+                    existingProd.cost = invItem.cost;
+                    existingProd.price = invItem.price;
+                    existingProd.qty += invItem.qty;
                 } else {
+                    let newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
                     products.push({
-                        id: products.length + 1,
-                        name: item.name,
-                        cost: item.cost,
-                        price: item.price,
-                        qty: item.qty
+                        id: newId,
+                        name: invItem.name,
+                        cost: invItem.cost,
+                        price: invItem.price,
+                        qty: invItem.qty
                     });
                 }
             });
 
-            saveData();
             currentPurchaseInvoice = [];
-            renderPurchaseInvoiceTable();
-            renderPurchasesTable();
-            alert('تم اعتماد وحفظ الفاتورة بنجاح وإرسال المواد للمحل!');
+            saveData();
+            refreshAllViews();
+            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح!');
         }
 
-        function renderPurchasesTable() {
+        function renderPurchasesLogTable() {
             const tbody = document.getElementById('purchases-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            products.forEach((p, index) => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${p.cost.toLocaleString()} د.ع</td>
-                        <td>${p.price.toLocaleString()} د.ع</td>
-                        <td><span style="color: ${p.qty > 0 ? 'var(--green)' : 'var(--danger)'}; font-weight:bold;">${p.qty}</span></td>
-                        <td>
-                            <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteProduct(${p.id})">حذف</button>
-                        </td>
-                    </tr>
+            products.forEach((prod, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${prod.name}</td>
+                    <td>${prod.cost} د.ع</td>
+                    <td>${prod.price} د.ع</td>
+                    <td><strong>${prod.qty}</strong></td>
+                    <td>
+                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteShopProduct(${prod.id})">حذف</button>
+                    </td>
                 `;
+                tbody.appendChild(tr);
             });
         }
 
-        function deleteProduct(id) {
-            if (confirm('هل أنت تأكد من حذف المنتج من المحل؟')) {
+        function deleteShopProduct(id) {
+            if (confirm('هل أنت متأكد من حذف هذا المنتج من المحل؟')) {
                 products = products.filter(p => p.id !== id);
                 saveData();
-                renderPurchasesTable();
+                refreshAllViews();
             }
         }
 
-        function renderPOS() {
-            const grid = document.getElementById('pos-products-grid');
-            grid.innerHTML = '';
-            products.forEach(p => {
-                grid.innerHTML += `
-                    <div class="product-card" onclick="addToCart('${p.name}')">
-                        <h4>${p.name}</h4>
-                        <div class="price">${p.price.toLocaleString()} د.ع</div>
-                        <div class="qty">المتوفر: ${p.qty}</div>
-                    </div>
-                `;
-            });
-        }
-
-        function addToCart(name) {
-            let prod = products.find(p => p.name === name);
-            if (!prod || prod.qty <= 0) {
-                alert('المنتج غير متوفر بالكمية الكافية!');
-                return;
-            }
-
-            let cartItem = cart.find(c => c.name === name);
-            if (cartItem) {
-                if (cartItem.qty + 1 > prod.qty) {
-                    alert('لا توجد كمية إضافية بالمحل!');
-                    return;
-                }
-                cartItem.qty++;
-            } else {
-                cart.push({ name: prod.name, price: prod.price, cost: prod.cost, qty: 1 });
-            }
-            renderCart();
-        }
-
-        function changeQty(name, delta) {
-            let cartItem = cart.find(c => c.name === name);
-            let prod = products.find(p => p.name === name);
-            if (cartItem) {
-                if (delta > 0 && cartItem.qty + 1 > prod.qty) {
-                    alert('تجاوزت الكمية المتوفرة في المحل!');
-                    return;
-                }
-                cartItem.qty += delta;
-                if (cartItem.qty <= 0) {
-                    cart = cart.filter(c => c.name !== name);
-                }
-            }
-            renderCart();
-        }
-
-        function renderCartSummary() {
-            let subtotal = 0;
-            cart.forEach(c => { subtotal += c.price * c.qty; });
-
-            let discount = (currentUser && currentUser.role === 'admin') ? (parseFloat(document.getElementById('cart-discount').value) || 0) : 0;
-            let finalTotal = subtotal - discount;
-            if (finalTotal < 0) finalTotal = 0;
-
-            document.getElementById('cart-subtotal').innerText = `${subtotal.toLocaleString()} د.ع`;
-            document.getElementById('cart-total-price').innerText = `${finalTotal.toLocaleString()} د.ع`;
-        }
-
-        function renderCart() {
-            const container = document.getElementById('cart-items');
-            if (cart.length === 0) {
-                container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>';
-                renderCartSummary();
-                return;
-            }
-
-            container.innerHTML = '';
-            cart.forEach(c => {
-                container.innerHTML += `
-                    <div class="cart-item">
-                        <div>
-                            <strong>${c.name}</strong><br>
-                            <small>${c.price.toLocaleString()} د.ع</small>
-                        </div>
-                        <div class="cart-item-controls">
-                            <button class="qty-btn" onclick="changeQty('${c.name}', -1)">-</button>
-                            <span>${c.qty}</span>
-                            <button class="qty-btn" onclick="changeQty('${c.name}', 1)">+</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            renderCartSummary();
-        }
-
-        function checkout() {
-            if (cart.length === 0) {
-                alert('السلة فارغة!');
-                return;
-            }
-
-            let subtotal = 0;
-            let totalCost = 0;
-            let itemsDetails = [];
-
-            cart.forEach(c => {
-                subtotal += c.price * c.qty;
-                totalCost += c.cost * c.qty;
-                itemsDetails.push(`${c.name} (${c.qty})`);
-
-                let p = products.find(prod => prod.name === c.name);
-                if (p) p.qty -= c.qty;
-            });
-
-            let discount = (currentUser && currentUser.role === 'admin') ? (parseFloat(document.getElementById('cart-discount').value) || 0) : 0;
-            let finalTotal = subtotal - discount;
-            if (finalTotal < 0) finalTotal = 0;
-
-            let profit = finalTotal - totalCost;
-
-            salesHistory.push({
-                id: invoiceCounter++,
-                time: new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }),
-                items: itemsDetails.join('، '),
-                discount: discount,
-                total: finalTotal,
-                profit: profit
-            });
-
-            saveData();
-
-            const container = document.getElementById('cart-items');
-            container.innerHTML = `
-                <div style="text-align: center; margin-top: 3rem; color: var(--green);">
-                    <div style="font-size: 3.5rem; margin-bottom: 1rem;">✅</div>
-                    <h3 style="font-size: 1.2rem; color: var(--green);">تمت العملية بنجاح!</h3>
-                    <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.5rem;">تم حفظ الفاتورة وتحديث المحل</p>
-                </div>
-            `;
-
-            cart = [];
-            if (document.getElementById('cart-discount')) document.getElementById('cart-discount').value = 0;
-            
-            setTimeout(() => {
-                renderCart();
-                renderPOS();
-            }, 2500);
-        }
-
+        // --- 5. التقارير ---
         function renderReports() {
-            document.getElementById('stat-invoices-count').innerText = salesHistory.length;
+            const countElem = document.getElementById('stat-invoices-count');
+            const totalSalesElem = document.getElementById('stat-total-sales');
+            const totalProfitElem = document.getElementById('stat-total-profit');
+            const historyBody = document.getElementById('sales-history-body');
 
-            let totalSales = 0;
-            let totalProfit = 0;
+            if (!countElem) return;
 
-            salesHistory.forEach(s => {
-                totalSales += s.total;
-                totalProfit += s.profit;
-            });
+            countElem.innerText = salesHistory.length;
+            let sumSales = salesHistory.reduce((acc, inv) => acc + inv.total, 0);
+            let sumProfit = salesHistory.reduce((acc, inv) => acc + inv.profit, 0);
 
-            document.getElementById('stat-total-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
-            document.getElementById('stat-total-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
-
-            const tbody = document.getElementById('sales-history-body');
-            tbody.innerHTML = '';
+            totalSalesElem.innerText = sumSales + ' د.ع';
+            totalProfitElem.innerText = sumProfit + ' د.ع';
 
             if (salesHistory.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مباعة اليوم</td></tr>';
+                historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مسجلة اليوم</td></tr>`;
+            } else {
+                historyBody.innerHTML = '';
+                salesHistory.slice().reverse().forEach(inv => {
+                    let itemsDesc = inv.items.map(i => `${i.name} (${i.qty})`).join(', ');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${inv.invoiceNo}</td>
+                        <td>${inv.time}</td>
+                        <td>${itemsDesc}</td>
+                        <td>${inv.discount} د.ع</td>
+                        <td><strong>${inv.total} د.ع</strong></td>
+                        <td style="color: var(--green); font-weight: bold;">${inv.profit} د.ع</td>
+                    `;
+                    historyBody.appendChild(tr);
+                });
+            }
+
+            filterCustomReport();
+        }
+
+        function filterCustomReport() {
+            const startDate = document.getElementById('report-start-date').value;
+            const endDate = document.getElementById('report-end-date').value;
+            const tableBody = document.getElementById('custom-report-table-body');
+            const salesElem = document.getElementById('custom-report-sales');
+            const profitElem = document.getElementById('custom-report-profit');
+            const countElem = document.getElementById('custom-report-count');
+
+            if (!startDate || !endDate) {
+                salesElem.innerText = '0 د.ع';
+                profitElem.innerText = '0 د.ع';
+                countElem.innerText = '0';
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">الرجاء تحديد تاريخ البداية والنهاية لعرض التقرير</td></tr>`;
                 return;
             }
 
-            salesHistory.slice().reverse().forEach(s => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>#INV-${s.id}</td>
-                        <td>${s.time}</td>
-                        <td>${s.items}</td>
-                        <td>${s.discount.toLocaleString()} د.ع</td>
-                        <td><strong>${s.total.toLocaleString()} د.ع</strong></td>
-                        <td style="color: var(--green); font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
-                    </tr>
-                `;
+            const filtered = salesHistory.filter(inv => {
+                let invDate = inv.date || inv.time.slice(0, 10);
+                return invDate >= startDate && invDate <= endDate;
             });
+
+            let totalSales = filtered.reduce((acc, inv) => acc + inv.total, 0);
+            let totalProfit = filtered.reduce((acc, inv) => acc + inv.profit, 0);
+
+            salesElem.innerText = totalSales + ' د.ع';
+            profitElem.innerText = totalProfit + ' د.ع';
+            countElem.innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">لا توجد فواتير في هذه الفترة المحددة</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            filtered.slice().reverse().forEach(inv => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${inv.invoiceNo}</td>
+                    <td>${inv.time}</td>
+                    <td><strong>${inv.total} د.ع</strong></td>
+                    <td style="color: var(--green); font-weight: bold;">${inv.profit} د.ع</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function resetCustomReportDates() {
+            document.getElementById('report-start-date').value = '';
+            document.getElementById('report-end-date').value = '';
+            filterCustomReport();
         }
 
         function resetDailyAccount() {
-            if (salesHistory.length === 0) {
-                alert('لا توجد مبيعات لتصفيرها اليوم!');
+            if (confirm('هل أنت متأكد من تصفير الحساب اليومي وإنهاء اليوم؟ سيتم مسح سجل فواتير المبيعات الحالية.')) {
+                salesHistory = [];
+                invoiceCounter = 1;
+                saveData();
+                refreshAllViews();
+                alert('تم تصفير الحساب اليومي بنجاح.');
+            }
+        }
+
+        // --- 6. الإعدادات (المستخدمين والنسخ الاحتياطي) ---
+        function handleAddUser(e) {
+            e.preventDefault();
+            const u = document.getElementById('new-username').value.trim();
+            const p = document.getElementById('new-password').value.trim();
+            const r = document.getElementById('new-role').value;
+
+            if (users.some(user => user.username === u)) {
+                alert('اسم المستخدم موجود مسبقاً!');
                 return;
             }
 
-            if (confirm('هل أنت تأكد من تصفير الحساب والبدء بيوم جديد؟')) {
-                let totalSales = 0;
-                let totalProfit = 0;
-                salesHistory.forEach(s => { totalSales += s.total; totalProfit += s.profit; });
+            users.push({ username: u, password: p, role: r });
+            document.getElementById('add-user-form').reset();
+            saveData();
+            renderUsersTable();
+            alert('تمت إضافة المستخدم بنجاح!');
+        }
 
-                let reportContent = `--- تقرير تصفير اليوم (${new Date().toLocaleDateString('ar-IQ')}) ---\n`;
-                reportContent += `عدد الفواتير: ${salesHistory.length}\n`;
-                reportContent += `إجمالي المبيعات: ${totalSales.toLocaleString()} د.ع\n`;
-                reportContent += `صافي الأرباح: ${totalProfit.toLocaleString()} د.ع\n\n`;
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            users.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.username}</td>
+                    <td><input type="text" value="${user.password}" id="up-pass-${index}" style="padding: 0.3rem; width: 100px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 4px;"></td>
+                    <td>
+                        <select id="up-role-${index}" style="padding: 0.3rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 4px;">
+                            <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>موظف</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>مدير</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="updateUser(${index})">حفظ التعديل</button>
+                        ${user.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteUser(${index})">حذف</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-                salesHistory.forEach(s => {
-                    reportContent += `فاتورة #${s.id} - ${s.time} | المواد: ${s.items} | المجموع: ${s.total} د.ع | الربح: ${s.profit} د.ع\n`;
-                });
+        function updateUser(index) {
+            const newPass = document.getElementById(`up-pass-${index}`).value.trim();
+            const newRole = document.getElementById(`up-role-${index}`).value;
+            users[index].password = newPass;
+            users[index].role = newRole;
+            saveData();
+            alert('تم تحديث بيانات المستخدم بنجاح!');
+            renderUsersTable();
+        }
 
-                const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt`;
-                a.click();
-
-                salesHistory = [];
+        function deleteUser(index) {
+            if (users[index].username === 'admin') {
+                alert('لا يمكن حذف حساب المدير الأساسي!');
+                return;
+            }
+            if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
+                users.splice(index, 1);
                 saveData();
-                renderReports();
-                alert('تمت عملية تصفير الحساب بنجاح وتنزيل التقرير!');
+                renderUsersTable();
             }
         }
 
         function downloadBackup() {
-            const backupData = { users, warehouseItems, products, salesHistory, invoiceCounter };
+            const backupData = {
+                users,
+                warehouseItems,
+                products,
+                salesHistory,
+                invoiceCounter
+            };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `backup_cashier_${new Date().toISOString().slice(0, 10)}.json`);
-            dlAnchorElem.click();
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "sayed_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
 
         function restoreBackup(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-                    if (importedData.users && importedData.products) {
-                        users = importedData.users;
-                        warehouseItems = importedData.warehouseItems || [];
-                        products = importedData.products;
-                        salesHistory = importedData.salesHistory || [];
-                        invoiceCounter = importedData.invoiceCounter || 1;
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.users && parsed.products) {
+                        users = parsed.users;
+                        warehouseItems = parsed.warehouseItems || [];
+                        products = parsed.products;
+                        salesHistory = parsed.salesHistory || [];
+                        invoiceCounter = parsed.invoiceCounter || 1;
                         saveData();
+                        refreshAllViews();
                         alert('تم استرجاع النسخة الاحتياطية بنجاح!');
-                        location.reload();
+                    } else {
+                        alert('ملف النسخة الاحتياطية غير صالح!');
                     }
-                } catch (err) { alert('حدث خطأ أثناء قراءة الملف!'); }
+                } catch (err) {
+                    alert('حدث خطأ أثناء قراءة الملف.');
+                }
             };
-            fileReader.readAsText(event.target.files[0]);
+            reader.readAsText(file);
         }
     </script>
 </body>
