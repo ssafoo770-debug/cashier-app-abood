@@ -271,6 +271,12 @@
             font-size: 0.85rem;
             color: #64748b;
         }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -278,12 +284,13 @@
     <div class="sidebar">
         <h2><i class="fa-solid fa-cart-shopping"></i> كاشير الأسواق</h2>
         <button class="menu-btn active" onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> نقطة البيع</button>
-        <button class="menu-btn" onclick="switchTab('inventory')"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزن</button>
+        <button class="menu-btn" onclick="switchTab('inventory')"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزن والمشتريات</button>
         <button class="menu-btn" onclick="switchTab('reports')"><i class="fa-solid fa-chart-line"></i> مبيعات وأرباح اليوم</button>
     </div>
 
     <div class="main-content">
         
+        <!-- نقطة البيع -->
         <div id="pos-view" class="view-section active">
             <div class="products-container">
                 <h3>المنتجات المتاحة</h3>
@@ -309,9 +316,10 @@
             </div>
         </div>
 
+        <!-- المخزن والمشتريات -->
         <div id="inventory-view" class="view-section" style="flex-direction: column;">
             <div class="form-card">
-                <h3>إضافة منتج جديد للمخزن</h3>
+                <h3>إضافة فاتورة مشتريات (منتج جديد/تحديث كمية)</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>اسم المنتج</label>
@@ -326,14 +334,14 @@
                         <input type="number" id="prod-price" placeholder="1000">
                     </div>
                     <div class="form-group">
-                        <label>الكمية المتاحة</label>
+                        <label>الكمية المشتراة</label>
                         <input type="number" id="prod-qty" placeholder="50">
                     </div>
                 </div>
                 <button class="btn" style="margin-top: 1rem;" onclick="addProduct()">إضافة للمخزن</button>
             </div>
 
-            <h3>قائمة المنتجات في المخزن</h3>
+            <h3>قائمة منتجات المخزن (دائمة ولن تُحذف بالـ Refresh)</h3>
             <table>
                 <thead>
                     <tr>
@@ -349,8 +357,12 @@
             </table>
         </div>
 
+        <!-- المبيعات والتقارير -->
         <div id="reports-view" class="view-section" style="flex-direction: column;">
-            <h3>تقارير ومبيعات اليوم (<span id="current-date"></span>)</h3>
+            <div class="header-actions">
+                <h3>تقارير ومبيعات اليوم (<span id="current-date"></span>)</h3>
+                <button class="btn btn-danger" onclick="mergeAndClearSales()"><i class="fa-solid fa-broom"></i> تصفير ودمج الفواتير</button>
+            </div>
             
             <div class="stats-grid" style="margin-top: 1rem;">
                 <div class="stat-card orange">
@@ -445,7 +457,7 @@
                         <td>${p.price.toLocaleString()} د.ع</td>
                         <td style="color: var(--green); font-weight: bold;">+${profitPerUnit.toLocaleString()} د.ع</td>
                         <td>${p.qty}</td>
-                        <td><button class="btn btn-danger" onclick="deleteProduct(${p.id})">حذف</button></td>
+                        <td><button class="btn btn-danger" onclick="deleteProduct(${p.id})">حذف المنتج</button></td>
                     </tr>
                 `;
             });
@@ -477,12 +489,14 @@
             document.getElementById('prod-cost').value = '';
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-qty').value = '';
-            alert('تمت إضافة المنتج بنجاح!');
+            alert('تم حِفظ فاتورة المشتريات/المنتج بنجاح ولن تضيع عند الـ Refresh!');
         }
 
         function deleteProduct(id) {
-            products = products.filter(p => p.id !== id);
-            saveProducts();
+            if(confirm('هل أنت تأكد من حذف هذا المنتج نهائياً من المخزن؟')) {
+                products = products.filter(p => p.id !== id);
+                saveProducts();
+            }
         }
 
         function addToCart(id) {
@@ -588,13 +602,11 @@
                 profit: saleProfit
             });
 
-            // تفريغ السلة وتحديث الواجهة فوراً
             cart = [];
             renderCart();
             saveProducts();
             saveSales();
 
-            // إظهار شريط النجاح
             const alertBox = document.getElementById('checkout-alert');
             alertBox.style.display = 'block';
             setTimeout(() => {
@@ -632,6 +644,17 @@
             document.getElementById('today-count').innerText = `${todaySales.length} فاتورة`;
             document.getElementById('today-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
             document.getElementById('today-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
+        }
+
+        function mergeAndClearSales() {
+            const confirmWord = prompt('لتصفير ودمج فواتير المبيعات، اكتب كلمة (دمج) في الصندوق أدناه:');
+            if(confirmWord === 'دمج') {
+                salesHistory = [];
+                saveSales();
+                alert('تم دمج وتصفير الفواتير بنجاح!');
+            } else if(confirmWord !== null) {
+                alert('الكلمة غير صحيحة، لم يتم مسح الفواتير.');
+            }
         }
 
         renderProducts();
