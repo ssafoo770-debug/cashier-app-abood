@@ -185,6 +185,7 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             margin-top: 1rem;
+            margin-bottom: 2rem;
         }
 
         th, td {
@@ -208,7 +209,7 @@
 
         .btn-green { background: var(--green); }
         .btn-green:hover { background: #15803d; }
-        .btn-danger { background: var(--danger); padding: 0.4rem 0.8rem; border-radius: 5px; }
+        .btn-danger { background: var(--danger); padding: 0.4rem 0.8rem; border-radius: 5px; color: white; border: none; cursor: pointer; }
 
         .form-card {
             background: var(--card);
@@ -277,6 +278,20 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        .cancel-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -319,11 +334,11 @@
         <!-- المخزن والمشتريات -->
         <div id="inventory-view" class="view-section" style="flex-direction: column;">
             <div class="form-card">
-                <h3>إضافة فاتورة مشتريات (منتج جديد/تحديث كمية)</h3>
+                <h3>إضافة فاتورة مشتريات جديدة للمخزن</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>اسم المنتج</label>
-                        <input type="text" id="prod-name" placeholder="مثال: شاي غمدان">
+                        <input type="text" id="prod-name" placeholder="مثال: شاي سيف">
                     </div>
                     <div class="form-group">
                         <label>سعر التكلفة (الشراء)</label>
@@ -334,23 +349,35 @@
                         <input type="number" id="prod-price" placeholder="1000">
                     </div>
                     <div class="form-group">
-                        <label>الكمية المشتراة</label>
+                        <label>كمية المشتريات</label>
                         <input type="number" id="prod-qty" placeholder="50">
                     </div>
                 </div>
-                <button class="btn" style="margin-top: 1rem;" onclick="addProduct()">إضافة للمخزن</button>
+                <button class="btn" style="margin-top: 1rem;" onclick="addProduct()">حفظ فاتورة المشتريات</button>
             </div>
 
-            <h3>قائمة منتجات المخزن (دائمة ولن تُحذف بالـ Refresh)</h3>
+            <h3>سجل فواتير المشتريات المضافة (دائمة ولن تحذف بالـ Refresh)</h3>
             <table>
                 <thead>
                     <tr>
                         <th>اسم المنتج</th>
                         <th>سعر التكلفة</th>
                         <th>سعر البيع</th>
-                        <th>الربح/قطعة</th>
-                        <th>الكمية المتوفرة</th>
-                        <th>الإجراء</th>
+                        <th>الكمية المشتراة</th>
+                        <th>إجمالي التكلفة</th>
+                        <th>إلغاء/حذف الفاتورة</th>
+                    </tr>
+                </thead>
+                <tbody id="purchase-history-table"></tbody>
+            </table>
+
+            <h3>المخزون المتوفر المتركم</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>اسم المنتج</th>
+                        <th>سعر البيع</th>
+                        <th>إجمالي الكمية المتاحة</th>
                     </tr>
                 </thead>
                 <tbody id="inventory-table"></tbody>
@@ -379,7 +406,7 @@
                 </div>
             </div>
 
-            <h3>سجل الفواتير المباعة اليوم</h3>
+            <h3>سجل الفواتير المباعة اليوم (حفظ دائم)</h3>
             <table>
                 <thead>
                     <tr>
@@ -398,6 +425,7 @@
 
     <script>
         let products = JSON.parse(localStorage.getItem('pos_products')) || [];
+        let purchaseHistory = JSON.parse(localStorage.getItem('pos_purchase_history')) || [];
         let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
         let cart = [];
 
@@ -405,6 +433,11 @@
             localStorage.setItem('pos_products', JSON.stringify(products));
             renderProducts();
             renderInventory();
+        }
+
+        function savePurchases() {
+            localStorage.setItem('pos_purchase_history', JSON.stringify(purchaseHistory));
+            renderPurchaseHistory();
         }
 
         function saveSales() {
@@ -431,7 +464,7 @@
             const grid = document.getElementById('pos-products');
             grid.innerHTML = '';
             if(products.length === 0) {
-                grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات بالمخزن حالياً، اضغط على (إدارة المخزن) لإضافة المنتجات.</p>';
+                grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات بالمخزن حالياً، أضف فواتير مشتريات أولاً.</p>';
                 return;
             }
             products.forEach(p => {
@@ -449,15 +482,35 @@
             const table = document.getElementById('inventory-table');
             table.innerHTML = '';
             products.forEach(p => {
-                const profitPerUnit = p.price - p.cost;
                 table.innerHTML += `
                     <tr>
                         <td><strong>${p.name}</strong></td>
-                        <td>${p.cost.toLocaleString()} د.ع</td>
                         <td>${p.price.toLocaleString()} د.ع</td>
-                        <td style="color: var(--green); font-weight: bold;">+${profitPerUnit.toLocaleString()} د.ع</td>
-                        <td>${p.qty}</td>
-                        <td><button class="btn btn-danger" onclick="deleteProduct(${p.id})">حذف المنتج</button></td>
+                        <td><strong>${p.qty}</strong></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderPurchaseHistory() {
+            const table = document.getElementById('purchase-history-table');
+            table.innerHTML = '';
+            if(purchaseHistory.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مشتريات مضافة.</td></tr>';
+                return;
+            }
+            purchaseHistory.forEach(ph => {
+                const totalCost = ph.cost * ph.qty;
+                table.innerHTML += `
+                    <tr>
+                        <td><strong>${ph.name}</strong></td>
+                        <td>${ph.cost.toLocaleString()} د.ع</td>
+                        <td>${ph.price.toLocaleString()} د.ع</td>
+                        <td>${ph.qty}</td>
+                        <td><strong>${totalCost.toLocaleString()} د.ع</strong></td>
+                        <td>
+                            <button class="cancel-btn" title="حذف الفاتورة" onclick="deletePurchaseInvoice(${ph.id})">✕</button>
+                        </td>
                     </tr>
                 `;
             });
@@ -474,6 +527,9 @@
                 return;
             }
 
+            const newPurchase = { id: Date.now(), name, cost, price, qty };
+            purchaseHistory.unshift(newPurchase);
+
             const existing = products.find(p => p.name === name);
             if(existing) {
                 existing.qty += qty;
@@ -484,19 +540,33 @@
             }
 
             saveProducts();
+            savePurchases();
 
             document.getElementById('prod-name').value = '';
             document.getElementById('prod-cost').value = '';
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-qty').value = '';
-            alert('تم حِفظ فاتورة المشتريات/المنتج بنجاح ولن تضيع عند الـ Refresh!');
         }
 
-        function deleteProduct(id) {
-            if(confirm('هل أنت تأكد من حذف هذا المنتج نهائياً من المخزن؟')) {
-                products = products.filter(p => p.id !== id);
-                saveProducts();
+        function deletePurchaseInvoice(purchaseId) {
+            if(!confirm('هل أنت تأكد من إلغاء وحذف فاتورة المشتريات هذه؟')) return;
+
+            const phIndex = purchaseHistory.findIndex(ph => ph.id === purchaseId);
+            if(phIndex === -1) return;
+
+            const purchase = purchaseHistory[phIndex];
+            const prod = products.find(p => p.name === purchase.name);
+
+            if(prod) {
+                prod.qty -= purchase.qty;
+                if(prod.qty <= 0) {
+                    products = products.filter(p => p.name !== purchase.name);
+                }
             }
+
+            purchaseHistory.splice(phIndex, 1);
+            saveProducts();
+            savePurchases();
         }
 
         function addToCart(id) {
@@ -626,6 +696,10 @@
             const table = document.getElementById('sales-history-table');
             table.innerHTML = '';
 
+            if(todaySales.length === 0) {
+                table.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد فواتير مبيعات اليوم.</td></tr>';
+            }
+
             todaySales.forEach(s => {
                 totalSales += s.total;
                 totalProfit += s.profit;
@@ -659,6 +733,8 @@
 
         renderProducts();
         renderInventory();
+        renderPurchaseHistory();
+        renderReports();
     </script>
 </body>
 </html>
