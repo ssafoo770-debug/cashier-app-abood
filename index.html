@@ -464,11 +464,19 @@
             </div>
         </div>
 
-        <!-- 3. المحل (المشتريات التي تنزل في المحل مباشرة) -->
+        <!-- 3. المحل -->
         <div id="shop-view" class="view-section">
             <div class="content-box">
-                <h2>🏬 محتويات المحل (المنتجات المعروضة للبيع)</h2>
-                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">هذه القائمة تنزل تلقائياً وتحدث فوراً عند إضافة أي مشتريات جديدة.</p>
+                <div class="flex-between">
+                    <div>
+                        <h2>🏬 محتويات المحل (المنتجات المعروضة للبيع)</h2>
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">هذه القائمة تنزل تلقائياً وتحدث فوراً عند إضافة أي مشتريات جديدة.</p>
+                    </div>
+                    <div style="background: rgba(37, 99, 235, 0.1); padding: 1rem; border-radius: 10px; border: 1px solid var(--accent); text-align: center;">
+                        <span style="font-size: 0.85rem; color: #94a3b8; display: block;">إجمالي رأس المال بالمحل (التكلفة):</span>
+                        <strong id="shop-total-cost-val" style="font-size: 1.3rem; color: var(--accent);">0 د.ع</strong>
+                    </div>
+                </div>
                 <table class="custom-table" style="margin-top: 1.5rem;">
                     <thead>
                         <tr>
@@ -914,6 +922,13 @@
         function renderShopTable() {
             const tbody = document.getElementById('shop-table-body');
             tbody.innerHTML = '';
+            
+            let totalCostVal = 0;
+            products.forEach(p => {
+                totalCostVal += (p.cost * p.qty);
+            });
+            document.getElementById('shop-total-cost-val').innerText = `${totalCostVal.toLocaleString()} د.ع`;
+
             if (products.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">المحل فارغ تماماً</td></tr>';
                 return;
