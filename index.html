@@ -232,7 +232,7 @@
             height: calc(100vh - 3rem);
         }
 
-        .cart-items { flex: 1; overflow-y: auto; margin: 1rem 0; }
+        .cart-items { flex: 1; overflow-y: auto; margin: 0.8rem 0; }
 
         .cart-item {
             display: flex;
@@ -405,7 +405,13 @@
             </div>
 
             <div class="cart-container">
-                <div><h3>الفاتورة الحالية (مبيعات)</h3></div>
+                <div>
+                    <h3>الفاتورة الحالية (مبيعات)</h3>
+                    <!-- خانة البحث السريع داخل السلة -->
+                    <div style="margin-top: 0.6rem;">
+                        <input type="text" id="cart-search-input" placeholder="🔍 ابحث عن مادة بالسلة..." oninput="renderCart()" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; font-size: 0.9rem;">
+                    </div>
+                </div>
                 <div class="cart-items" id="cart-items">
                     <p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>
                 </div>
@@ -493,7 +499,7 @@
             </div>
         </div>
 
-        <!-- 4. المشتريات (فاتورة مشتريات متعددة المواد مع الباركود) -->
+        <!-- 4. المشتريات -->
         <div id="purchases-view" class="view-section">
             <div class="content-box">
                 <h2>📦 إدخال فاتورة مشتريات جديدة (أكثر من مادة)</h2>
@@ -927,6 +933,7 @@
 
         function renderCart() {
             const container = document.getElementById('cart-items');
+            const searchInput = document.getElementById('cart-search-input');
             if (!container) return;
 
             if (cart.length === 0) {
@@ -935,8 +942,17 @@
                 return;
             }
 
+            let query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            let filteredCart = cart.filter(item => item.name.toLowerCase().includes(query));
+
+            if (filteredCart.length === 0) {
+                container.innerHTML = `<p style="color: #94a3b8; text-align: center; margin-top: 1.5rem;">لا توجد نتائج مطابقة للبحث بالسلة</p>`;
+                renderCartSummary();
+                return;
+            }
+
             container.innerHTML = '';
-            cart.forEach(item => {
+            filteredCart.forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'cart-item';
                 row.innerHTML = `
@@ -1004,10 +1020,12 @@
             });
 
             cart = [];
+            const searchInput = document.getElementById('cart-search-input');
+            if (searchInput) searchInput.value = '';
             if (discountInput) discountInput.value = '0';
             saveData();
             refreshAllViews();
-            alert('تم إتمام عملية البيع بنجاح وطباعة الفاتورة!');
+            alert('تم إتمام عملية البيع بنجاح!');
         }
 
         // --- 2. المخزن ---
