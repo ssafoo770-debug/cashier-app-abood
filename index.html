@@ -629,7 +629,7 @@
                     </div>
                     <div class="form-group">
                         <label>كلمة السر</label>
-                        <input type="password" id="new-password" placeholder="****">
+                        <input type="text" id="new-password" placeholder="مثال: 1234">
                     </div>
                     <div class="form-group">
                         <label>الصلاحية</label>
@@ -641,13 +641,14 @@
                 </div>
                 <button class="btn" onclick="addUser()">إضافة مستخدم جديد</button>
 
-                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">قائمة المستخدمين الحاليين</h4>
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">قائمة المستخدمين الحالية (مع كلمات السر)</h4>
                 <table>
                     <thead>
                         <tr>
                             <th>اسم المستخدم</th>
+                            <th>كلمة السر</th>
                             <th>الصلاحية</th>
-                            <th>حذف</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="users-table"></tbody>
@@ -685,6 +686,36 @@
             <div class="modal-actions">
                 <button class="btn" style="background: #64748b;" onclick="closeEditModal()">إلغاء</button>
                 <button class="btn btn-green" onclick="savePurchaseEdit()">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تعديل المستخدم -->
+    <div class="modal-overlay" id="edit-user-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>تعديل حساب مستخدم / كاشير</h3>
+                <button class="action-btn cancel-btn" onclick="closeEditUserModal()">✕</button>
+            </div>
+            <input type="hidden" id="edit-user-id">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>اسم المستخدم</label>
+                <input type="text" id="edit-user-username">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>كلمة السر الجديدة</label>
+                <input type="text" id="edit-user-password">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>الصلاحية</label>
+                <select id="edit-user-role">
+                    <option value="cashier">كاشير (بيع فقط)</option>
+                    <option value="admin">مدير (صلاحيات كاملة)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background: #64748b;" onclick="closeEditUserModal()">إلغاء</button>
+                <button class="btn btn-green" onclick="saveUserEdit()">حفظ التعديلات</button>
             </div>
         </div>
     </div>
@@ -1132,9 +1163,11 @@
                 table.innerHTML += `
                     <tr>
                         <td><strong>${u.username}</strong></td>
+                        <td><span style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-family: monospace;">${u.password}</span></td>
                         <td>${u.role === 'admin' ? 'مدير' : 'كاشير'}</td>
                         <td>
-                            ${u.username !== 'admin' ? `<button class="action-btn cancel-btn" onclick="deleteUser(${u.id})">✕</button>` : '<small>أساسي</small>'}
+                            <button class="action-btn edit-btn" onclick="openEditUserModal(${u.id})"><i class="fa-solid fa-pen"></i></button>
+                            ${u.username !== 'admin' ? `<button class="action-btn cancel-btn" onclick="deleteUser(${u.id})">✕</button>` : '<small style="color:#94a3b8;">أساسي</small>'}
                         </td>
                     </tr>
                 `;
@@ -1161,6 +1194,43 @@
 
             document.getElementById('new-username').value = '';
             document.getElementById('new-password').value = '';
+        }
+
+        function openEditUserModal(id) {
+            const u = users.find(user => user.id === id);
+            if(!u) return;
+
+            document.getElementById('edit-user-id').value = u.id;
+            document.getElementById('edit-user-username').value = u.username;
+            document.getElementById('edit-user-password').value = u.password;
+            document.getElementById('edit-user-role').value = u.role;
+
+            document.getElementById('edit-user-modal').style.display = 'flex';
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('edit-user-modal').style.display = 'none';
+        }
+
+        function saveUserEdit() {
+            const id = parseInt(document.getElementById('edit-user-id').value);
+            const u = document.getElementById('edit-user-username').value.trim();
+            const p = document.getElementById('edit-user-password').value.trim();
+            const r = document.getElementById('edit-user-role').value;
+
+            if(!u || !p) {
+                alert('يرجى ملء جميع البيانات!');
+                return;
+            }
+
+            const user = users.find(user => user.id === id);
+            if(user) {
+                user.username = u;
+                user.password = p;
+                user.role = r;
+                saveUsers();
+                closeEditUserModal();
+            }
         }
 
         function deleteUser(id) {
