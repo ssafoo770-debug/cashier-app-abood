@@ -370,18 +370,6 @@
                 </thead>
                 <tbody id="purchase-history-table"></tbody>
             </table>
-
-            <h3>المخزون المتوفر المتركم</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>اسم المنتج</th>
-                        <th>سعر البيع</th>
-                        <th>إجمالي الكمية المتاحة</th>
-                    </tr>
-                </thead>
-                <tbody id="inventory-table"></tbody>
-            </table>
         </div>
 
         <!-- المبيعات والتقارير -->
@@ -432,7 +420,6 @@
         function saveProducts() {
             localStorage.setItem('pos_products', JSON.stringify(products));
             renderProducts();
-            renderInventory();
         }
 
         function savePurchases() {
@@ -463,31 +450,22 @@
         function renderProducts() {
             const grid = document.getElementById('pos-products');
             grid.innerHTML = '';
-            if(products.length === 0) {
-                grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات بالمخزن حالياً، أضف فواتير مشتريات أولاً.</p>';
+            
+            // عرض المنتجات المتوفرة فقط بدون تكرار
+            const availableProducts = products.filter(p => p.qty > 0);
+
+            if(availableProducts.length === 0) {
+                grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات متوفرة بالمخزن حالياً.</p>';
                 return;
             }
-            products.forEach(p => {
+
+            availableProducts.forEach(p => {
                 grid.innerHTML += `
                     <div class="product-card" onclick="addToCart(${p.id})">
                         <h4>${p.name}</h4>
                         <div class="price">${p.price.toLocaleString()} د.ع</div>
                         <div class="qty">المتوفر: ${p.qty}</div>
                     </div>
-                `;
-            });
-        }
-
-        function renderInventory() {
-            const table = document.getElementById('inventory-table');
-            table.innerHTML = '';
-            products.forEach(p => {
-                table.innerHTML += `
-                    <tr>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${p.price.toLocaleString()} د.ع</td>
-                        <td><strong>${p.qty}</strong></td>
-                    </tr>
                 `;
             });
         }
@@ -530,11 +508,10 @@
             const newPurchase = { id: Date.now(), name, cost, price, qty };
             purchaseHistory.unshift(newPurchase);
 
-            const existing = products.find(p => p.name === name);
+            const existing = products.find(p => p.name === name && p.price === price);
             if(existing) {
                 existing.qty += qty;
                 existing.cost = cost;
-                existing.price = price;
             } else {
                 products.push({ id: Date.now(), name, cost, price, qty });
             }
@@ -549,18 +526,18 @@
         }
 
         function deletePurchaseInvoice(purchaseId) {
-            if(!confirm('هل أنت تأكد من إلغاء وحذف فاتورة المشتريات هذه؟')) return;
+            if(!confirm('هل أنت متاكد من إلغاء وحذف فاتورة المشتريات هذه؟')) return;
 
             const phIndex = purchaseHistory.findIndex(ph => ph.id === purchaseId);
             if(phIndex === -1) return;
 
             const purchase = purchaseHistory[phIndex];
-            const prod = products.find(p => p.name === purchase.name);
+            const prod = products.find(p => p.name === purchase.name && p.price === purchase.price);
 
             if(prod) {
                 prod.qty -= purchase.qty;
                 if(prod.qty <= 0) {
-                    products = products.filter(p => p.name !== purchase.name);
+                    products = products.filter(p => !(p.name === purchase.name && p.price === purchase.price));
                 }
             }
 
@@ -721,18 +698,14 @@
         }
 
         function mergeAndClearSales() {
-            const confirmWord = prompt('لتصفير ودمج فواتير المبيعات، اكتب كلمة (دمج) في الصندوق أدناه:');
-            if(confirmWord === 'دمج') {
+            if(confirm('هل أنت متاكد من تصفير ودمج فواتير المبيعات لهذا اليوم؟')) {
                 salesHistory = [];
                 saveSales();
-                alert('تم دمج وتصفير الفواتير بنجاح!');
-            } else if(confirmWord !== null) {
-                alert('الكلمة غير صحيحة، لم يتم مسح الفواتير.');
+                alert('تم تصفير ودمج الفواتير بنجاح!');
             }
         }
 
         renderProducts();
-        renderInventory();
         renderPurchaseHistory();
         renderReports();
     </script>
