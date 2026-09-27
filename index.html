@@ -377,6 +377,11 @@
             <span>نقطة البيع</span>
         </button>
 
+        <button class="menu-btn admin-only" id="btn-warehouse" onclick="switchTab('warehouse')">
+            <i class="fa-solid fa-warehouse"></i>
+            <span>المخزن</span>
+        </button>
+
         <button class="menu-btn admin-only" id="btn-inventory" onclick="switchTab('inventory')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>إدارة المخزن والمشتريات</span>
@@ -451,7 +456,27 @@
             </div>
         </div>
 
-        <!-- 2. واجهة إدارة المخزن والمشتريات -->
+        <!-- 2. واجهة المخزن المستقلة -->
+        <div id="warehouse-view" class="view-section">
+            <div class="content-box">
+                <h2>🏭 محتويات المخزن الحالي</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">عرض تفصيلي لجميع المواد الموجودة في المخزن والكميات المتاحة وسعر البيع والتكلفة.</p>
+                <table class="custom-table" style="margin-top: 1.5rem;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم المنتج</th>
+                            <th>سعر التكلفة</th>
+                            <th>سعر البيع</th>
+                            <th>الكمية المتوفرة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="warehouse-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. واجهة إدارة المخزن والمشتريات -->
         <div id="inventory-view" class="view-section">
             <div class="content-box">
                 <h2>📦 إدخال فاتورة شراء / إضافة منتج جديد</h2>
@@ -496,7 +521,7 @@
             </div>
         </div>
 
-        <!-- 3. واجهة مبيعات وأرباح اليوم -->
+        <!-- 4. واجهة مبيعات وأرباح اليوم -->
         <div id="reports-view" class="view-section">
             <div class="stats-grid">
                 <div class="stat-card blue">
@@ -545,7 +570,7 @@
             </div>
         </div>
 
-        <!-- 4. واجهة الإعدادات والصلاحيات -->
+        <!-- 5. واجهة الإعدادات والصلاحيات -->
         <div id="settings-view" class="view-section">
             <!-- قسم مظهر البرنامج (الوضع الداكن) -->
             <div class="content-box">
@@ -822,12 +847,33 @@
             if (targetBtn) targetBtn.classList.add('active');
 
             if (tabId === 'pos') renderPOS();
+            if (tabId === 'warehouse') renderWarehouseTable();
             if (tabId === 'inventory') renderInventoryTable();
             if (tabId === 'reports') renderReports();
             if (tabId === 'settings') {
                 renderUsersTable();
                 document.getElementById('darkModeToggle').checked = localStorage.getItem('cashier_dark_mode') === 'true';
             }
+        }
+
+        function renderWarehouseTable() {
+            const tbody = document.getElementById('warehouse-table-body');
+            tbody.innerHTML = '';
+            if (products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">المخزن فارغ تماماً</td></tr>';
+                return;
+            }
+            products.forEach((p, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.cost.toLocaleString()} د.ع</td>
+                        <td>${p.price.toLocaleString()} د.ع</td>
+                        <td><span style="color: ${p.qty > 0 ? 'var(--green)' : 'var(--danger)'}; font-weight:bold;">${p.qty}</span></td>
+                    </tr>
+                `;
+            });
         }
 
         function handleAddProduct(e) {
