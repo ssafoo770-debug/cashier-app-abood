@@ -133,7 +133,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-width: 320px;
+            min-width: 340px;
         }
 
         .cart-items {
@@ -235,7 +235,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
             width: 100%;
             margin-bottom: 1.5rem;
@@ -251,6 +251,7 @@
 
         .stat-card.green { border-color: var(--green); }
         .stat-card.blue { border-color: #0284c7; }
+        .stat-card.orange { border-color: #f97316; }
 
         .stat-card h4 { color: #64748b; font-size: 0.9rem; margin-bottom: 0.5rem; }
         .stat-card .value { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
@@ -258,12 +259,17 @@
         .alert-success {
             background-color: #dcfce7;
             color: #15803d;
-            padding: 1rem;
+            padding: 0.8rem;
             border-radius: 8px;
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
             display: none;
             text-align: center;
             font-weight: bold;
+        }
+
+        .items-detail {
+            font-size: 0.85rem;
+            color: #64748b;
         }
     </style>
 </head>
@@ -288,7 +294,7 @@
             <div class="cart-container">
                 <div>
                     <h3>الفاتورة الحالية</h3>
-                    <div id="checkout-alert" class="alert-success">تمت عملية البيع وتصفير الفاتورة بنجاح!</div>
+                    <div id="checkout-alert" class="alert-success">✓ تم إتمام الفاتورة وتصفير السلة!</div>
                 </div>
 
                 <div class="cart-items" id="cart-items">
@@ -347,9 +353,13 @@
 
         <!-- قسم تقارير مبيعات اليوم -->
         <div id="reports-view" class="view-section" style="flex-direction: column;">
-            <h3>تقارير وأرباح اليوم (<span id="current-date"></span>)</h3>
+            <h3>تقارير ومبيعات اليوم (<span id="current-date"></span>)</h3>
             
             <div class="stats-grid" style="margin-top: 1rem;">
+                <div class="stat-card orange">
+                    <h4>عدد الفواتير المباعة</h4>
+                    <div class="value" id="today-count">0 فاتورة</div>
+                </div>
                 <div class="stat-card blue">
                     <h4>إجمالي مبيعات اليوم</h4>
                     <div class="value" id="today-sales">0 د.ع</div>
@@ -358,19 +368,17 @@
                     <h4>إجمالي الربح الصافي</h4>
                     <div class="value" id="today-profit">0 د.ع</div>
                 </div>
-                <div class="stat-card">
-                    <h4>نسبة الربح من المبيعات</h4>
-                    <div class="value" id="today-margin">0%</div>
-                </div>
             </div>
 
             <h3>سجل الفواتير المباعة اليوم</h3>
             <table>
                 <thead>
                     <tr>
+                        <th>رقم الفاتورة</th>
                         <th>الوقت</th>
+                        <th>المنتجات المباعة</th>
                         <th>قيمة الفاتورة</th>
-                        <th>الربح الصافي</th>
+                        <th>الربح</th>
                     </tr>
                 </thead>
                 <tbody id="sales-history-table"></tbody>
@@ -411,10 +419,9 @@
                 document.getElementById('reports-view').classList.add('active');
                 renderReports();
             }
-            event.currentTarget.classList.add('active');
+            if(event) event.currentTarget.classList.add('active');
         }
 
-        // عرض بطاقات المنتجات (أيـقـونـة واحـدة لـكـل مـنـتـج)
         function renderProducts() {
             const grid = document.getElementById('pos-products');
             grid.innerHTML = '';
@@ -458,7 +465,6 @@
                 return;
             }
 
-            // التأكد إذا كان المنتج موجود مسبقاً لزيادة كميته بدلاً من تكراره
             const existing = products.find(p => p.name === name);
             if(existing) {
                 existing.qty += qty;
@@ -491,7 +497,7 @@
             const item = cart.find(c => c.id === id);
             if(item) {
                 if(item.qty + 1 > prod.qty) {
-                    alert('الكمية المحددة هي أقصى كمية متوفرة بالكرة بالمخزن');
+                    alert('وصلت للحد الأقصى المتوفر بالمخزن');
                     return;
                 }
                 item.qty++;
@@ -552,11 +558,16 @@
             document.getElementById('cart-total-price').innerText = `${total.toLocaleString()} د.ع`;
         }
 
+        // إتمام البيع والتحديث الفوري بدون ريفرش
         function checkout() {
-            if(cart.length === 0) return;
+            if(cart.length === 0) {
+                alert('السلة فارغة!');
+                return;
+            }
 
             let saleTotal = 0;
             let saleProfit = 0;
+            let soldItems = [];
 
             cart.forEach(item => {
                 const prod = products.find(p => p.id === item.id);
@@ -564,29 +575,34 @@
                     prod.qty -= item.qty;
                     saleTotal += item.price * item.qty;
                     saleProfit += (item.price - item.cost) * item.qty;
+                    soldItems.push(`${item.name} (${item.qty})`);
                 }
             });
 
             const now = new Date();
-            salesHistory.push({
+            const invoiceNum = salesHistory.length + 1001;
+
+            salesHistory.unshift({
+                id: invoiceNum,
                 date: now.toISOString().split('T')[0],
-                time: now.toLocaleTimeString('ar-IQ'),
+                time: now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }),
+                items: soldItems.join('، '),
                 total: saleTotal,
                 profit: saleProfit
             });
 
-            // تصفير الفاتورة مباشرة
+            // تصفير الفاتورة وتحديث الواجهة فوراً
             cart = [];
             saveProducts();
             saveSales();
             renderCart();
 
-            // إظهار تنبيه نجاح فوري
+            // تنبيه فوري بالنجاح
             const alertBox = document.getElementById('checkout-alert');
             alertBox.style.display = 'block';
             setTimeout(() => {
                 alertBox.style.display = 'none';
-            }, 2500);
+            }, 2000);
         }
 
         function renderReports() {
@@ -607,18 +623,18 @@
 
                 table.innerHTML += `
                     <tr>
+                        <td><strong>#${s.id}</strong></td>
                         <td>${s.time}</td>
-                        <td>${s.total.toLocaleString()} د.ع</td>
+                        <td class="items-detail">${s.items}</td>
+                        <td><strong>${s.total.toLocaleString()} د.ع</strong></td>
                         <td style="color: var(--green); font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
                     </tr>
                 `;
             });
 
-            const margin = totalSales > 0 ? ((totalProfit / totalSales) * 100).toFixed(1) : 0;
-
+            document.getElementById('today-count').innerText = `${todaySales.length} فاتورة`;
             document.getElementById('today-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
             document.getElementById('today-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
-            document.getElementById('today-margin').innerText = `${margin}%`;
         }
 
         renderProducts();
