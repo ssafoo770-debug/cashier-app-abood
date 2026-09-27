@@ -12,6 +12,7 @@
             --accent: #2563eb;
             --green: #16a34a;
             --danger: #dc2626;
+            --warning: #d97706;
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
@@ -274,12 +275,18 @@
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
         }
 
         .btn:hover { opacity: 0.9; }
         .btn-green { background: var(--green); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); }
 
-        /* الكروت والنماذج والأجدول */
+        /* الكروت والنماذج والجداول */
         .content-box {
             background: var(--card);
             padding: 1.5rem;
@@ -307,7 +314,7 @@
             color: #475569;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             padding: 0.7rem;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
@@ -362,6 +369,12 @@
 
         .stat-info h4 { font-size: 0.9rem; color: #64748b; margin-bottom: 0.3rem; }
         .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -375,7 +388,7 @@
 
         <div class="user-badge">
             <i class="fa-solid fa-user-gear"></i>
-            <div>المستخدم: <strong>admin</strong> (مدير)</div>
+            <div>المستخدم: <strong id="current-user-name">admin</strong> (<span id="current-user-role">مدير</span>)</div>
         </div>
 
         <button class="menu-btn active" id="btn-pos" onclick="switchTab('pos')">
@@ -383,24 +396,24 @@
             <span>نقطة البيع</span>
         </button>
 
-        <button class="menu-btn" id="btn-inventory" onclick="switchTab('inventory')">
+        <button class="menu-btn admin-only" id="btn-inventory" onclick="switchTab('inventory')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>إدارة المخزن والمشتريات</span>
         </button>
 
-        <button class="menu-btn" id="btn-reports" onclick="switchTab('reports')">
+        <button class="menu-btn admin-only" id="btn-reports" onclick="switchTab('reports')">
             <i class="fa-solid fa-chart-line"></i>
             <span>مبيعات وأرباح اليوم</span>
         </button>
 
-        <button class="menu-btn" id="btn-settings" onclick="switchTab('settings')">
+        <button class="menu-btn admin-only" id="btn-settings" onclick="switchTab('settings')">
             <i class="fa-solid fa-gear"></i>
             <span>الإعدادات والصلاحيات</span>
         </button>
 
-        <button class="menu-btn logout" onclick="alert('تم تسجيل الخروج')">
+        <button class="menu-btn logout" onclick="switchUserPrompt()">
             <i class="fa-solid fa-right-from-bracket"></i>
-            <span>تسجيل الخروج</span>
+            <span>تبديل المستخدم</span>
         </button>
     </div>
 
@@ -411,9 +424,7 @@
         <div id="pos-view" class="view-section active">
             <div class="products-container">
                 <h3>المنتجات المتاحة في المخزن</h3>
-                <div class="products-grid" id="pos-products-grid">
-                    <!-- تتولد تلقائياً عبر JS -->
-                </div>
+                <div class="products-grid" id="pos-products-grid"></div>
             </div>
 
             <div class="cart-container">
@@ -431,7 +442,7 @@
                         <span id="cart-subtotal">0 د.ع</span>
                     </div>
                     
-                    <div class="cart-row">
+                    <div class="cart-row admin-only">
                         <span>الخصم (خاص بالمدير):</span>
                         <div class="discount-input-group">
                             <input type="number" id="cart-discount" value="0" min="0" oninput="renderCartSummary()">
@@ -476,7 +487,7 @@
             </div>
 
             <div class="content-box">
-                <h2>📋 جَدول المنتجات والمخزون الحالي</h2>
+                <h2>📋 جدول المنتجات والمخزون الحالي</h2>
                 <table class="custom-table">
                     <thead>
                         <tr>
@@ -485,11 +496,10 @@
                             <th>سعر التكلفة</th>
                             <th>سعر البيع</th>
                             <th>الكمية المتاحة</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
-                    <tbody id="inventory-table-body">
-                        <!-- تتولد عبر JS -->
-                    </tbody>
+                    <tbody id="inventory-table-body"></tbody>
                 </table>
             </div>
         </div>
@@ -521,7 +531,12 @@
             </div>
 
             <div class="content-box">
-                <h2>📑 سجل الفواتير المباعة</h2>
+                <div class="flex-between">
+                    <h2>📑 سجل الفواتير المباعة اليوم</h2>
+                    <button class="btn btn-danger" onclick="resetDailyAccount()">
+                        <i class="fa-solid fa-arrows-rotate"></i> تصفير الحساب اليومي (إنهاء اليوم)
+                    </button>
+                </div>
                 <table class="custom-table">
                     <thead>
                         <tr>
@@ -533,56 +548,193 @@
                             <th>الربح</th>
                         </tr>
                     </thead>
-                    <tbody id="sales-history-body">
-                        <!-- تتولد عبر JS -->
-                    </tbody>
+                    <tbody id="sales-history-body"></tbody>
                 </table>
             </div>
         </div>
 
         <!-- 4. واجهة الإعدادات والصلاحيات -->
         <div id="settings-view" class="view-section">
+            <!-- النسخ الاحتياطي -->
             <div class="content-box">
-                <h2>⚙️ الإعدادات والصلاحيات</h2>
-                <p style="margin-top: 1rem; color: #64748b;">إدارة المستخدمين، صلاحيات الكاشير، وإعدادات الطابعة.</p>
+                <h2>💾 النسخ الاحتياطي واستعادة البيانات</h2>
+                <p style="margin: 0.5rem 0 1rem 0; color: #64748b;">تنزيل أو استعادة كافة ملفات المخزون وسجل الفواتير والمستخدمين.</p>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-warning" onclick="downloadBackup()">
+                        <i class="fa-solid fa-download"></i> تحميل نسخة احتياطية
+                    </button>
+                    <button class="btn" onclick="document.getElementById('backup-file-input').click()">
+                        <i class="fa-solid fa-upload"></i> استرجاع نسخة احتياطية
+                    </button>
+                    <input type="file" id="backup-file-input" style="display: none;" accept=".json" onchange="restoreBackup(event)">
+                </div>
+            </div>
+
+            <!-- إدارة المستخدمين -->
+            <div class="content-box">
+                <h2>👥 إدارة المستخدمين والصلاحيات</h2>
+                <form id="add-user-form" onsubmit="handleAddUser(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>اسم المستخدم (اليوزر)</label>
+                            <input type="text" id="new-username" placeholder="مثال: ali" required>
+                        </div>
+                        <div class="form-group">
+                            <label>كلمة السر</label>
+                            <input type="password" id="new-password" placeholder="****" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الصلاحية</label>
+                            <select id="new-role">
+                                <option value="staff">موظف (نقطة البيع فقط)</option>
+                                <option value="admin">مدير (كل الصلاحيات)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ إضافة مستخدم جديد</button>
+                </form>
+
+                <h3 style="margin-top: 1.5rem;">قائمة المستخدمين الحاليين</h3>
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>اليوزر</th>
+                            <th>الصلاحية</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body"></tbody>
+                </table>
             </div>
         </div>
 
     </div>
 
     <script>
-        // البيانات الأولية للمخزن
-        let products = [
-            { id: 1, name: 'شاي', cost: 1000, price: 1500, qty: 9 },
-            { id: 2, name: 'نسكافيه', cost: 4000, price: 6000, qty: 11 },
-            { id: 3, name: 'سيف', cost: 50, price: 100, qty: 5 }
+        // --- 1. البيانات والتخزين ---
+        let currentUser = { username: 'admin', role: 'admin' };
+
+        let users = JSON.parse(localStorage.getItem('cashier_users')) || [
+            { username: 'admin', password: '123', role: 'admin' },
+            { username: 'cashier', password: '123', role: 'staff' }
         ];
 
-        // سجل الفواتير والمبيعات
-        let salesHistory = [];
-        let invoiceCounter = 1;
+        let products = JSON.parse(localStorage.getItem('cashier_products')) || [
+            { id: 1, name: 'شاي', cost: 1000, price: 1500, qty: 10 },
+            { id: 2, name: 'نسكافيه', cost: 4000, price: 6000, qty: 15 },
+            { id: 3, name: 'سيف', cost: 50, price: 100, qty: 20 }
+        ];
 
-        // السلة الحالية
+        let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
+        let invoiceCounter = parseInt(localStorage.getItem('cashier_inv_counter')) || 1;
         let cart = [];
 
-        // التنقل بين الأقسام
+        function saveData() {
+            localStorage.setItem('cashier_users', JSON.stringify(users));
+            localStorage.setItem('cashier_products', JSON.stringify(products));
+            localStorage.setItem('cashier_sales', JSON.stringify(salesHistory));
+            localStorage.setItem('cashier_inv_counter', invoiceCounter.toString());
+        }
+
+        // --- 2. إدارة المستخدمين والصلاحيات ---
+        function applyRolePermissions() {
+            document.getElementById('current-user-name').innerText = currentUser.username;
+            document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير' : 'موظف';
+
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                el.style.display = (currentUser.role === 'admin') ? '' : 'none';
+            });
+
+            if (currentUser.role !== 'admin') {
+                switchTab('pos');
+            }
+        }
+
+        function switchUserPrompt() {
+            const inputUser = prompt('أدخل اسم المستخدم:');
+            if (!inputUser) return;
+            const inputPass = prompt('أدخل كلمة السر:');
+
+            const found = users.find(u => u.username === inputUser && u.password === inputPass);
+            if (found) {
+                currentUser = found;
+                alert(`أهلاً بك يا ${found.username}، تم تسجيل الدخول بصلاحية: ${found.role === 'admin' ? 'مدير' : 'موظف'}`);
+                applyRolePermissions();
+            } else {
+                alert('اسم المستخدم أو كلمة السر غير صحيحة!');
+            }
+        }
+
+        function handleAddUser(e) {
+            e.preventDefault();
+            const u = document.getElementById('new-username').value.trim();
+            const p = document.getElementById('new-password').value.trim();
+            const r = document.getElementById('new-role').value;
+
+            if (users.find(user => user.username === u)) {
+                alert('اسم المستخدم هذا موجود مسبقاً!');
+                return;
+            }
+
+            users.push({ username: u, password: p, role: r });
+            saveData();
+            document.getElementById('add-user-form').reset();
+            renderUsersTable();
+            alert('تمت إضافة المستخدم بنجاح!');
+        }
+
+        function deleteUser(username) {
+            if (username === 'admin') {
+                alert('لا يمكنك حذف المدير الرئيسي!');
+                return;
+            }
+            if (confirm(`هل أنت تأكد من حذف المستخدم ${username}؟`)) {
+                users = users.filter(u => u.username !== username);
+                saveData();
+                renderUsersTable();
+            }
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${u.username}</strong></td>
+                        <td>${u.role === 'admin' ? 'مدير' : 'موظف'}</td>
+                        <td>
+                            ${u.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser('${u.username}')">حذف</button>` : 'أساسي'}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- 3. التنقل بين الواجهات ---
         function switchTab(tabId) {
+            if (currentUser.role !== 'admin' && tabId !== 'pos') {
+                alert('عذراً! هذه الخانة مخصصة للمدير فقط.');
+                return;
+            }
+
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
             const targetView = document.getElementById(tabId + '-view');
             const targetBtn = document.getElementById('btn-' + tabId);
 
-            if(targetView) targetView.classList.add('active');
-            if(targetBtn) targetBtn.classList.add('active');
+            if (targetView) targetView.classList.add('active');
+            if (targetBtn) targetBtn.classList.add('active');
 
-            // تحديث العرض حسب القسم
-            if(tabId === 'pos') renderPOS();
-            if(tabId === 'inventory') renderInventoryTable();
-            if(tabId === 'reports') renderReports();
+            if (tabId === 'pos') renderPOS();
+            if (tabId === 'inventory') renderInventoryTable();
+            if (tabId === 'reports') renderReports();
+            if (tabId === 'settings') renderUsersTable();
         }
 
-        // --- 1. وظائف إدارة المخزن ---
+        // --- 4. إدارة المخزن ---
         function handleAddProduct(e) {
             e.preventDefault();
             const name = document.getElementById('prod-name').value.trim();
@@ -591,7 +743,7 @@
             const qty = parseInt(document.getElementById('prod-qty').value);
 
             let existing = products.find(p => p.name === name);
-            if(existing) {
+            if (existing) {
                 existing.cost = cost;
                 existing.price = price;
                 existing.qty += qty;
@@ -599,9 +751,18 @@
                 products.push({ id: products.length + 1, name, cost, price, qty });
             }
 
+            saveData();
             document.getElementById('add-product-form').reset();
             alert('تم حفظ المنتج في المخزن بنجاح!');
             renderInventoryTable();
+        }
+
+        function deleteProduct(id) {
+            if (confirm('هل أنت تأكد من حذف المنتج؟')) {
+                products = products.filter(p => p.id !== id);
+                saveData();
+                renderInventoryTable();
+            }
         }
 
         function renderInventoryTable() {
@@ -615,12 +776,15 @@
                         <td>${p.cost.toLocaleString()} د.ع</td>
                         <td>${p.price.toLocaleString()} د.ع</td>
                         <td><span style="color: ${p.qty > 0 ? 'green' : 'red'}; font-weight:bold;">${p.qty}</span></td>
+                        <td>
+                            <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteProduct(${p.id})">حذف</button>
+                        </td>
                     </tr>
                 `;
             });
         }
 
-        // --- 2. وظائف نقطة البيع (POS) ---
+        // --- 5. نقطة البيع (POS) ---
         function renderPOS() {
             const grid = document.getElementById('pos-products-grid');
             grid.innerHTML = '';
@@ -637,14 +801,14 @@
 
         function addToCart(name) {
             let prod = products.find(p => p.name === name);
-            if(!prod || prod.qty <= 0) {
+            if (!prod || prod.qty <= 0) {
                 alert('المنتج غير متوفر بالكمية الكافية!');
                 return;
             }
 
             let cartItem = cart.find(c => c.name === name);
-            if(cartItem) {
-                if(cartItem.qty + 1 > prod.qty) {
+            if (cartItem) {
+                if (cartItem.qty + 1 > prod.qty) {
                     alert('لا توجد كمية إضافية بالمخزن!');
                     return;
                 }
@@ -658,13 +822,13 @@
         function changeQty(name, delta) {
             let cartItem = cart.find(c => c.name === name);
             let prod = products.find(p => p.name === name);
-            if(cartItem) {
-                if(delta > 0 && cartItem.qty + 1 > prod.qty) {
+            if (cartItem) {
+                if (delta > 0 && cartItem.qty + 1 > prod.qty) {
                     alert('تجاوزت الكمية المتوفرة في المخزن!');
                     return;
                 }
                 cartItem.qty += delta;
-                if(cartItem.qty <= 0) {
+                if (cartItem.qty <= 0) {
                     cart = cart.filter(c => c.name !== name);
                 }
             }
@@ -675,9 +839,13 @@
             let subtotal = 0;
             cart.forEach(c => { subtotal += c.price * c.qty; });
 
-            let discount = parseFloat(document.getElementById('cart-discount').value) || 0;
+            let discount = 0;
+            if (currentUser.role === 'admin') {
+                discount = parseFloat(document.getElementById('cart-discount').value) || 0;
+            }
+
             let finalTotal = subtotal - discount;
-            if(finalTotal < 0) finalTotal = 0;
+            if (finalTotal < 0) finalTotal = 0;
 
             document.getElementById('cart-subtotal').innerText = `${subtotal.toLocaleString()} د.ع`;
             document.getElementById('cart-total-price').innerText = `${finalTotal.toLocaleString()} د.ع`;
@@ -685,7 +853,7 @@
 
         function renderCart() {
             const container = document.getElementById('cart-items');
-            if(cart.length === 0) {
+            if (cart.length === 0) {
                 container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>';
                 renderCartSummary();
                 return;
@@ -712,7 +880,7 @@
         }
 
         function checkout() {
-            if(cart.length === 0) {
+            if (cart.length === 0) {
                 alert('السلة فارغة!');
                 return;
             }
@@ -726,18 +894,16 @@
                 totalCost += c.cost * c.qty;
                 itemsDetails.push(`${c.name} (${c.qty})`);
 
-                // الخصم من المخزون الأصلي
                 let p = products.find(prod => prod.name === c.name);
-                if(p) p.qty -= c.qty;
+                if (p) p.qty -= c.qty;
             });
 
-            let discount = parseFloat(document.getElementById('cart-discount').value) || 0;
+            let discount = (currentUser.role === 'admin') ? (parseFloat(document.getElementById('cart-discount').value) || 0) : 0;
             let finalTotal = subtotal - discount;
-            if(finalTotal < 0) finalTotal = 0;
+            if (finalTotal < 0) finalTotal = 0;
 
             let profit = finalTotal - totalCost;
 
-            // تسجيل الفاتورة في السجل
             salesHistory.push({
                 id: invoiceCounter++,
                 time: new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }),
@@ -747,16 +913,16 @@
                 profit: profit
             });
 
+            saveData();
             alert('تمت عملية البيع وحفظ الفاتورة بنجاح!');
 
-            // إعادة ضبط السلة
             cart = [];
-            document.getElementById('cart-discount').value = 0;
+            if (document.getElementById('cart-discount')) document.getElementById('cart-discount').value = 0;
             renderCart();
             renderPOS();
         }
 
-        // --- 3. وظائف المبيعات والتقارير ---
+        // --- 6. مبيعات اليوم وتصفير الحساب ---
         function renderReports() {
             document.getElementById('stat-invoices-count').innerText = salesHistory.length;
 
@@ -774,7 +940,7 @@
             const tbody = document.getElementById('sales-history-body');
             tbody.innerHTML = '';
 
-            if(salesHistory.length === 0) {
+            if (salesHistory.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مباعة اليوم</td></tr>';
                 return;
             }
@@ -793,7 +959,84 @@
             });
         }
 
-        // التشغيل الأول عند الفتح
+        function resetDailyAccount() {
+            if (salesHistory.length === 0) {
+                alert('لا توجد مبيعات لتصفيرها اليوم!');
+                return;
+            }
+
+            if (confirm('هل أنت تأكد من تصفير الحساب والبدء بيوم جديد؟ سيمسح سجل اليوم وسيتم تحميل ملخص الحساب تلقائياً.')) {
+                let totalSales = 0;
+                let totalProfit = 0;
+                salesHistory.forEach(s => { totalSales += s.total; totalProfit += s.profit; });
+
+                // إنشاء كشف حساب وتنزيله ملف نصي
+                let reportContent = `--- تقرير تصفير اليوم (${new Date().toLocaleDateString('ar-IQ')}) ---\n`;
+                reportContent += `عدد الفواتير: ${salesHistory.length}\n`;
+                reportContent += `إجمالي المبيعات: ${totalSales.toLocaleString()} د.ع\n`;
+                reportContent += `صافي الأرباح: ${totalProfit.toLocaleString()} د.ع\n\n`;
+                reportContent += `تفاصيل الفواتير:\n`;
+
+                salesHistory.forEach(s => {
+                    reportContent += `فاتورة #${s.id} - ${s.time} | المواد: ${s.items} | المجموع: ${s.total} د.ع | الربح: ${s.profit} د.ع\n`;
+                });
+
+                const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt`;
+                a.click();
+
+                // تصفير البيانات
+                salesHistory = [];
+                saveData();
+                renderReports();
+                alert('تمت عملية تصفير الحساب بنجاح وتنزيل تقرير اليوم!');
+            }
+        }
+
+        // --- 7. النسخ الاحتياطي واسترجاعه ---
+        function downloadBackup() {
+            const backupData = {
+                users,
+                products,
+                salesHistory,
+                invoiceCounter
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `backup_cashier_${new Date().toISOString().slice(0, 10)}.json`);
+            dlAnchorElem.click();
+        }
+
+        function restoreBackup(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.users && importedData.products) {
+                        users = importedData.users;
+                        products = importedData.products;
+                        salesHistory = importedData.salesHistory || [];
+                        invoiceCounter = importedData.invoiceCounter || 1;
+
+                        saveData();
+                        alert('تم استرجاع النسخة الاحتياطية بنجاح!');
+                        location.reload();
+                    } else {
+                        alert('الملف غير صالح أو متضرر!');
+                    }
+                } catch (err) {
+                    alert('حدث خطأ أثناء قراءة الملف!');
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        // التشغيل الأولي
+        applyRolePermissions();
         renderPOS();
     </script>
 </body>
