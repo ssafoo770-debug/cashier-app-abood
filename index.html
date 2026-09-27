@@ -74,9 +74,7 @@
             text-align: center;
         }
 
-        .sidebar-brand h2 {
-            font-size: 1.1rem;
-        }
+        .sidebar-brand h2 { font-size: 1.1rem; }
 
         .user-badge {
             background: #1e293b;
@@ -144,16 +142,18 @@
         }
 
         .view-section {
-            display: none; /* إخفاء كافة الواجهات افتراضياً */
+            display: none;
             width: 100%;
-        }
-
-        .view-section.active {
-            display: flex; /* إظهار الواجهة المحددة */
+            flex-direction: column;
             gap: 1.5rem;
         }
 
-        #pos-view {
+        .view-section.active {
+            display: flex;
+        }
+
+        #pos-view.active {
+            flex-direction: row;
             align-items: flex-start;
         }
 
@@ -273,19 +273,95 @@
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
 
+        .btn:hover { opacity: 0.9; }
         .btn-green { background: var(--green); }
-        .btn-green:hover { background: #15803d; }
 
-        /* تنسيقات صفحات الأقسام الأخرى */
+        /* الكروت والنماذج والأجدول */
         .content-box {
             background: var(--card);
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             width: 100%;
         }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        .form-group input {
+            padding: 0.7rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        /* الجداول */
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .custom-table th, .custom-table td {
+            padding: 0.8rem 1rem;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .custom-table th {
+            background-color: #f1f5f9;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* بطاقات الإحصائيات */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .stat-card i {
+            font-size: 2.2rem;
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .stat-card.blue i { background: #e0f2fe; color: #0284c7; }
+        .stat-card.green i { background: #dcfce7; color: #15803d; }
+        .stat-card.purple i { background: #f3e8ff; color: #9333ea; }
+
+        .stat-info h4 { font-size: 0.9rem; color: #64748b; margin-bottom: 0.3rem; }
+        .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -334,23 +410,9 @@
         <!-- 1. واجهة نقطة البيع -->
         <div id="pos-view" class="view-section active">
             <div class="products-container">
-                <h3>المنتجات المتاحة</h3>
-                <div class="products-grid">
-                    <div class="product-card" onclick="addToCart('شاي', 1500)">
-                        <h4>شاي</h4>
-                        <div class="price">1,500 د.ع</div>
-                        <div class="qty">المتوفر: 9</div>
-                    </div>
-                    <div class="product-card" onclick="addToCart('نسكافيه', 6000)">
-                        <h4>نسكافيه</h4>
-                        <div class="price">6,000 د.ع</div>
-                        <div class="qty">المتوفر: 11</div>
-                    </div>
-                    <div class="product-card" onclick="addToCart('سيف', 100)">
-                        <h4>سيف</h4>
-                        <div class="price">100 د.ع</div>
-                        <div class="qty">المتوفر: 5</div>
-                    </div>
+                <h3>المنتجات المتاحة في المخزن</h3>
+                <div class="products-grid" id="pos-products-grid">
+                    <!-- تتولد تلقائياً عبر JS -->
                 </div>
             </div>
 
@@ -389,16 +451,92 @@
         <!-- 2. واجهة إدارة المخزن والمشتريات -->
         <div id="inventory-view" class="view-section">
             <div class="content-box">
-                <h2>📦 إدارة المخزن والمشتريات</h2>
-                <p style="margin-top: 1rem; color: #64748b;">هنا يمكنك إضافة منتجات جديدة وتعديل الكميات في المخزن.</p>
+                <h2>📦 إدخال فاتورة شراء / إضافة منتج جديد</h2>
+                <form id="add-product-form" onsubmit="handleAddProduct(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>اسم المنتج</label>
+                            <input type="text" id="prod-name" placeholder="مثال: نسكافيه" required>
+                        </div>
+                        <div class="form-group">
+                            <label>سعر التكلفة (د.ع)</label>
+                            <input type="number" id="prod-cost" placeholder="مثال: 4000" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>سعر البيع (د.ع)</label>
+                            <input type="number" id="prod-price" placeholder="مثال: 6000" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الكمية المضافة</label>
+                            <input type="number" id="prod-qty" placeholder="مثال: 10" min="1" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ حفظ المنتج في المخزن</button>
+                </form>
+            </div>
+
+            <div class="content-box">
+                <h2>📋 جَدول المنتجات والمخزون الحالي</h2>
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم المنتج</th>
+                            <th>سعر التكلفة</th>
+                            <th>سعر البيع</th>
+                            <th>الكمية المتاحة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body">
+                        <!-- تتولد عبر JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- 3. واجهة مبيعات وأرباح اليوم -->
         <div id="reports-view" class="view-section">
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <div class="stat-info">
+                        <h4>عدد الفواتير</h4>
+                        <div id="stat-invoices-count">0</div>
+                    </div>
+                </div>
+                <div class="stat-card green">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <div class="stat-info">
+                        <h4>إجمالي المبيعات</h4>
+                        <div id="stat-total-sales">0 د.ع</div>
+                    </div>
+                </div>
+                <div class="stat-card purple">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <div class="stat-info">
+                        <h4>صافي أرباح اليوم</h4>
+                        <div id="stat-total-profit">0 د.ع</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-box">
-                <h2>📈 مبيعات وأرباح اليوم</h2>
-                <p style="margin-top: 1rem; color: #64748b;">تقارير المبيعات اليومية والإحصائيات والملخص المالي.</p>
+                <h2>📑 سجل الفواتير المباعة</h2>
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>رقم الفاتورة</th>
+                            <th>الوقت</th>
+                            <th>تفاصيل المواد</th>
+                            <th>الخصم</th>
+                            <th>المبلغ الإجمالي</th>
+                            <th>الربح</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-history-body">
+                        <!-- تتولد عبر JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -413,42 +551,120 @@
     </div>
 
     <script>
-        // دالة التنقل بين الأقسام
+        // البيانات الأولية للمخزن
+        let products = [
+            { id: 1, name: 'شاي', cost: 1000, price: 1500, qty: 9 },
+            { id: 2, name: 'نسكافيه', cost: 4000, price: 6000, qty: 11 },
+            { id: 3, name: 'سيف', cost: 50, price: 100, qty: 5 }
+        ];
+
+        // سجل الفواتير والمبيعات
+        let salesHistory = [];
+        let invoiceCounter = 1;
+
+        // السلة الحالية
+        let cart = [];
+
+        // التنقل بين الأقسام
         function switchTab(tabId) {
-            // إخفاء جميع الواجهات
-            const sections = document.querySelectorAll('.view-section');
-            sections.forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
-            // إزالة التحديد عن جميع الأزرار
-            const buttons = document.querySelectorAll('.menu-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-
-            // إظهار الواجهة المطلوبة وتحديد زرها
             const targetView = document.getElementById(tabId + '-view');
             const targetBtn = document.getElementById('btn-' + tabId);
 
             if(targetView) targetView.classList.add('active');
             if(targetBtn) targetBtn.classList.add('active');
+
+            // تحديث العرض حسب القسم
+            if(tabId === 'pos') renderPOS();
+            if(tabId === 'inventory') renderInventoryTable();
+            if(tabId === 'reports') renderReports();
         }
 
-        // سلة المبيعات
-        let cart = [];
+        // --- 1. وظائف إدارة المخزن ---
+        function handleAddProduct(e) {
+            e.preventDefault();
+            const name = document.getElementById('prod-name').value.trim();
+            const cost = parseFloat(document.getElementById('prod-cost').value);
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const qty = parseInt(document.getElementById('prod-qty').value);
 
-        function addToCart(name, price) {
-            let item = cart.find(c => c.name === name);
-            if(item) {
-                item.qty++;
+            let existing = products.find(p => p.name === name);
+            if(existing) {
+                existing.cost = cost;
+                existing.price = price;
+                existing.qty += qty;
             } else {
-                cart.push({ name, price, qty: 1 });
+                products.push({ id: products.length + 1, name, cost, price, qty });
+            }
+
+            document.getElementById('add-product-form').reset();
+            alert('تم حفظ المنتج في المخزن بنجاح!');
+            renderInventoryTable();
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventory-table-body');
+            tbody.innerHTML = '';
+            products.forEach((p, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.cost.toLocaleString()} د.ع</td>
+                        <td>${p.price.toLocaleString()} د.ع</td>
+                        <td><span style="color: ${p.qty > 0 ? 'green' : 'red'}; font-weight:bold;">${p.qty}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- 2. وظائف نقطة البيع (POS) ---
+        function renderPOS() {
+            const grid = document.getElementById('pos-products-grid');
+            grid.innerHTML = '';
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div class="product-card" onclick="addToCart('${p.name}')">
+                        <h4>${p.name}</h4>
+                        <div class="price">${p.price.toLocaleString()} د.ع</div>
+                        <div class="qty">المتوفر: ${p.qty}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function addToCart(name) {
+            let prod = products.find(p => p.name === name);
+            if(!prod || prod.qty <= 0) {
+                alert('المنتج غير متوفر بالكمية الكافية!');
+                return;
+            }
+
+            let cartItem = cart.find(c => c.name === name);
+            if(cartItem) {
+                if(cartItem.qty + 1 > prod.qty) {
+                    alert('لا توجد كمية إضافية بالمخزن!');
+                    return;
+                }
+                cartItem.qty++;
+            } else {
+                cart.push({ name: prod.name, price: prod.price, cost: prod.cost, qty: 1 });
             }
             renderCart();
         }
 
         function changeQty(name, delta) {
-            let item = cart.find(c => c.name === name);
-            if(item) {
-                item.qty += delta;
-                if(item.qty <= 0) {
+            let cartItem = cart.find(c => c.name === name);
+            let prod = products.find(p => p.name === name);
+            if(cartItem) {
+                if(delta > 0 && cartItem.qty + 1 > prod.qty) {
+                    alert('تجاوزت الكمية المتوفرة في المخزن!');
+                    return;
+                }
+                cartItem.qty += delta;
+                if(cartItem.qty <= 0) {
                     cart = cart.filter(c => c.name !== name);
                 }
             }
@@ -500,11 +716,85 @@
                 alert('السلة فارغة!');
                 return;
             }
-            alert('تمت عملية البيع بنجاح!');
+
+            let subtotal = 0;
+            let totalCost = 0;
+            let itemsDetails = [];
+
+            cart.forEach(c => {
+                subtotal += c.price * c.qty;
+                totalCost += c.cost * c.qty;
+                itemsDetails.push(`${c.name} (${c.qty})`);
+
+                // الخصم من المخزون الأصلي
+                let p = products.find(prod => prod.name === c.name);
+                if(p) p.qty -= c.qty;
+            });
+
+            let discount = parseFloat(document.getElementById('cart-discount').value) || 0;
+            let finalTotal = subtotal - discount;
+            if(finalTotal < 0) finalTotal = 0;
+
+            let profit = finalTotal - totalCost;
+
+            // تسجيل الفاتورة في السجل
+            salesHistory.push({
+                id: invoiceCounter++,
+                time: new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }),
+                items: itemsDetails.join('، '),
+                discount: discount,
+                total: finalTotal,
+                profit: profit
+            });
+
+            alert('تمت عملية البيع وحفظ الفاتورة بنجاح!');
+
+            // إعادة ضبط السلة
             cart = [];
             document.getElementById('cart-discount').value = 0;
             renderCart();
+            renderPOS();
         }
+
+        // --- 3. وظائف المبيعات والتقارير ---
+        function renderReports() {
+            document.getElementById('stat-invoices-count').innerText = salesHistory.length;
+
+            let totalSales = 0;
+            let totalProfit = 0;
+
+            salesHistory.forEach(s => {
+                totalSales += s.total;
+                totalProfit += s.profit;
+            });
+
+            document.getElementById('stat-total-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
+            document.getElementById('stat-total-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
+
+            const tbody = document.getElementById('sales-history-body');
+            tbody.innerHTML = '';
+
+            if(salesHistory.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مباعة اليوم</td></tr>';
+                return;
+            }
+
+            salesHistory.slice().reverse().forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#INV-${s.id}</td>
+                        <td>${s.time}</td>
+                        <td>${s.items}</td>
+                        <td>${s.discount.toLocaleString()} د.ع</td>
+                        <td><strong>${s.total.toLocaleString()} د.ع</strong></td>
+                        <td style="color: green; font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // التشغيل الأول عند الفتح
+        renderPOS();
     </script>
 </body>
 </html>
