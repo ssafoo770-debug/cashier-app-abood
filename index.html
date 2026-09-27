@@ -34,15 +34,15 @@
             position: relative;
         }
 
-        /* شاشة تسجيل الدخول */
+        /* شاشة تسجيل الدخول المعتمة تماماً (غير شفافة) */
         #login-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 9999;
+            background: #0f172a; /* لون كحلي غامق مصمت لمنع رؤية الواجهة الخلفية */
+            z-index: 99999;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -54,7 +54,7 @@
             border-radius: 16px;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             text-align: center;
         }
 
@@ -246,7 +246,7 @@
 </head>
 <body>
 
-    <!-- شاشة تسجل الدخول -->
+    <!-- شاشة تسجيل الدخول المغلقة تماماً -->
     <div id="login-overlay">
         <div class="login-card">
             <i class="fa-solid fa-lock" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
@@ -497,7 +497,7 @@
     </div>
 
     <script>
-        // --- 1. البيانات التخزينية ---
+        // --- البيانات التخزينية ---
         let currentUser = null;
 
         let users = JSON.parse(localStorage.getItem('cashier_users')) || [
@@ -521,7 +521,7 @@
             localStorage.setItem('cashier_inv_counter', invoiceCounter.toString());
         }
 
-        // --- 2. تسجيل الدخول والخروج ---
+        // --- تسجيل الدخول والخروج ---
         function handleLogin(e) {
             e.preventDefault();
             const u = document.getElementById('login-username').value.trim();
@@ -558,7 +558,7 @@
             switchTab('pos');
         }
 
-        // --- 3. إدارة المستخدمين وتعديل الحسابات ---
+        // --- إدارة المستخدمين وتعديل الحسابات ---
         function handleAddUser(e) {
             e.preventDefault();
             const u = document.getElementById('new-username').value.trim();
@@ -611,7 +611,7 @@
 
         function deleteUser(username) {
             if (username === 'admin') {
-                alert('لا يمكنك حذف المدير الرئيسي النظام!');
+                alert('لا يمكنك حذف المدير الرئيسي للنظام!');
                 return;
             }
             if (confirm(`هل أنت تأكد من حذف المستخدم ${username}؟`)) {
@@ -639,7 +639,7 @@
             });
         }
 
-        // --- 4. التنقل والمخزن وPOS ---
+        // --- التنقل والمخزن وPOS ---
         function switchTab(tabId) {
             if (currentUser && currentUser.role !== 'admin' && tabId !== 'pos') {
                 alert('عذراً! هذه الخانة مخصصة للمدير فقط.');
@@ -843,7 +843,7 @@
             renderPOS();
         }
 
-        // --- 5. التقارير والتصفير ---
+        // --- التقارير والتصفير ---
         function renderReports() {
             document.getElementById('stat-invoices-count').innerText = salesHistory.length;
 
@@ -913,7 +913,7 @@
             }
         }
 
-        // --- 6. النسخ الاحتياطي ---
+        // --- النسخ الاحتياطي ---
         function downloadBackup() {
             const backupData = { users, products, salesHistory, invoiceCounter };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
