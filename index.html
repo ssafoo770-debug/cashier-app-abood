@@ -34,14 +34,14 @@
             position: relative;
         }
 
-        /* شاشة تسجيل الدخول المعتمة تماماً (غير شفافة) */
+        /* شاشة تسجيل الدخول المعتمة تماماً */
         #login-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: #0f172a; /* لون كحلي غامق مصمت لمنع رؤية الواجهة الخلفية */
+            background: #0f172a;
             z-index: 99999;
             display: flex;
             align-items: center;
@@ -502,7 +502,8 @@
 
         let users = JSON.parse(localStorage.getItem('cashier_users')) || [
             { username: 'admin', password: '123', role: 'admin' },
-            { username: 'cashier', password: '123', role: 'staff' }
+            { username: 'cashier', password: '123', role: 'staff' },
+            { username: 'designer', password: '123', role: 'admin' }
         ];
 
         let products = JSON.parse(localStorage.getItem('cashier_products')) || [
@@ -548,7 +549,7 @@
             if (!currentUser) return;
 
             document.getElementById('current-user-name').innerText = currentUser.username;
-            document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير' : 'موظف';
+            document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? (currentUser.username === 'designer' ? 'مصمم' : 'مدير') : 'موظف';
 
             const adminElements = document.querySelectorAll('.admin-only');
             adminElements.forEach(el => {
@@ -629,7 +630,7 @@
                     <tr>
                         <td><strong>${u.username}</strong></td>
                         <td><code>${u.password}</code></td>
-                        <td>${u.role === 'admin' ? '<span style="color:blue;font-weight:bold;">مدير</span>' : 'موظف'}</td>
+                        <td>${u.role === 'admin' ? '<span style="color:blue;font-weight:bold;">' + (u.username === 'designer' ? 'مصمم' : 'مدير') + '</span>' : 'موظف'}</td>
                         <td>
                             <button class="btn btn-warning" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="editUser('${u.username}')">تعديل</button>
                             ${u.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser('${u.username}')">حذف</button>` : ''}
@@ -835,12 +836,25 @@
             });
 
             saveData();
-            alert('تمت عملية البيع وحفظ الفاتورة بنجاح!');
+
+            // عرض رسالة النجاح داخل السلة مباشرة بدلاً من الـ Alert المنبثق
+            const container = document.getElementById('cart-items');
+            container.innerHTML = `
+                <div style="text-align: center; margin-top: 3rem; color: var(--green);">
+                    <i class="fa-solid fa-circle-check" style="font-size: 3.5rem; margin-bottom: 1rem;"></i>
+                    <h3 style="font-size: 1.2rem; color: var(--green);">تمت العملية بنجاح!</h3>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">تم حفظ الفاتورة وتحديث المخزن</p>
+                </div>
+            `;
 
             cart = [];
             if (document.getElementById('cart-discount')) document.getElementById('cart-discount').value = 0;
-            renderCart();
-            renderPOS();
+            
+            // تحديث المجاميع وإعادة السلة فارغة بعد ثانيتين ونصف
+            setTimeout(() => {
+                renderCart();
+                renderPOS();
+            }, 2500);
         }
 
         // --- التقارير والتصفير ---
