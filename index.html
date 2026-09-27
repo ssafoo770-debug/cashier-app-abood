@@ -138,6 +138,7 @@
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
         .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.4rem; }
 
+        /* سلة الفاتورة */
         .cart-container {
             flex: 1;
             background: var(--card);
@@ -151,6 +152,49 @@
             position: sticky;
             top: 0;
             height: calc(100vh - 3rem);
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        /* تصميم السلة في وضع المرتجع */
+        .cart-container.return-mode {
+            background-color: #fef2f2;
+            border-color: var(--danger);
+        }
+
+        .cart-container.return-mode h3 {
+            color: var(--danger);
+        }
+
+        .mode-toggle-container {
+            display: flex;
+            background: #e2e8f0;
+            border-radius: 8px;
+            padding: 4px;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            background: transparent;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active-sale {
+            background: var(--accent);
+            color: white;
+        }
+
+        .mode-btn.active-return {
+            background: var(--danger);
+            color: white;
         }
 
         .cart-items {
@@ -165,7 +209,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.8rem 0;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #cbd5e1;
         }
 
         .cart-item-controls {
@@ -175,7 +219,7 @@
         }
 
         .qty-btn {
-            background: #e2e8f0;
+            background: #cbd5e1;
             border: none;
             width: 26px;
             height: 26px;
@@ -226,7 +270,7 @@
 
         .btn-green { background: var(--green); }
         .btn-green:hover { background: #15803d; }
-        .btn-danger { background: var(--danger); padding: 0.4rem 0.8rem; border-radius: 5px; color: white; border: none; cursor: pointer; }
+        .btn-danger { background: var(--danger); padding: 0.8rem 1.5rem; border-radius: 8px; color: white; border: none; cursor: pointer; font-weight: bold; }
 
         .form-card {
             background: var(--card);
@@ -329,10 +373,17 @@
                 <div class="products-grid" id="pos-products"></div>
             </div>
 
-            <div class="cart-container">
+            <div class="cart-container" id="cart-box">
                 <div>
-                    <h3>الفاتورة الحالية</h3>
-                    <div id="checkout-alert" class="alert-success">✓ تم إتمام الفاتورة وتصفير السلة!</div>
+                    <h3 id="cart-title">الفاتورة الحالية (مبيعات)</h3>
+                    
+                    <!-- تحويل وضع السلة بين مبيعات ومرتجع -->
+                    <div class="mode-toggle-container">
+                        <button class="mode-btn active-sale" id="sale-mode-btn" onclick="setCartMode('sale')">بيع</button>
+                        <button class="mode-btn" id="return-mode-btn" onclick="setCartMode('return')">مرتجع ↩</button>
+                    </div>
+
+                    <div id="checkout-alert" class="alert-success">✓ تم إتمام العملية بنجاح!</div>
                 </div>
 
                 <div class="cart-items" id="cart-items">
@@ -343,7 +394,7 @@
                         <span>المجموع:</span>
                         <span id="cart-total-price">0 د.ع</span>
                     </div>
-                    <button class="btn btn-green" style="width: 100%; font-size: 1.1rem; padding: 1rem;" onclick="checkout()">إتمام عملية البيع</button>
+                    <button class="btn btn-green" id="checkout-btn" style="width: 100%; font-size: 1.1rem; padding: 1rem;" onclick="checkout()">إتمام عملية البيع</button>
                 </div>
             </div>
         </div>
@@ -393,16 +444,16 @@
         <div id="reports-view" class="view-section" style="flex-direction: column;">
             <div class="header-actions">
                 <h3>تقارير ومبيعات اليوم (<span id="current-date"></span>)</h3>
-                <button class="btn btn-danger" onclick="mergeAndClearSales()"><i class="fa-solid fa-broom"></i> تصفير ودمج الفواتير</button>
+                <button class="btn btn-danger" style="padding: 0.4rem 0.8rem;" onclick="mergeAndClearSales()"><i class="fa-solid fa-broom"></i> تصفير ودمج الفواتير</button>
             </div>
             
             <div class="stats-grid" style="margin-top: 1rem;">
                 <div class="stat-card orange">
-                    <h4>عدد الفواتير المباعة</h4>
+                    <h4>عدد الفواتير</h4>
                     <div class="value" id="today-count">0 فاتورة</div>
                 </div>
                 <div class="stat-card blue">
-                    <h4>إجمالي مبيعات اليوم</h4>
+                    <h4>إجمالي المبيعات (الصافي)</h4>
                     <div class="value" id="today-sales">0 د.ع</div>
                 </div>
                 <div class="stat-card green">
@@ -411,14 +462,15 @@
                 </div>
             </div>
 
-            <h3>سجل الفواتير المباعة اليوم (حفظ دائم)</h3>
+            <h3>سجل الفواتير المباعة والمرتجعة اليوم</h3>
             <table>
                 <thead>
                     <tr>
                         <th>رقم الفاتورة</th>
                         <th>الوقت</th>
-                        <th>المنتجات المباعة</th>
-                        <th>قيمة الفاتورة</th>
+                        <th>النوع</th>
+                        <th>المنتجات</th>
+                        <th>القيمة</th>
                         <th>الربح</th>
                     </tr>
                 </thead>
@@ -433,8 +485,8 @@
         let purchaseHistory = JSON.parse(localStorage.getItem('pos_purchase_history')) || [];
         let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
         let cart = [];
+        let cartMode = 'sale'; // 'sale' أو 'return'
 
-        // تنظيف ودمج أي منتجات متكررة بنفس الاسم عند بداية التشغيل
         function consolidateProducts() {
             let consolidated = [];
             products.forEach(p => {
@@ -442,7 +494,7 @@
                 let existing = consolidated.find(item => item.name.trim() === cleanName);
                 if(existing) {
                     existing.qty += p.qty;
-                    existing.price = p.price; // الاعتماد على السعر الأخير
+                    existing.price = p.price;
                     existing.cost = p.cost;
                 } else {
                     consolidated.push({ ...p, name: cleanName });
@@ -484,6 +536,31 @@
             if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
         }
 
+        function setCartMode(mode) {
+            cartMode = mode;
+            const cartBox = document.getElementById('cart-box');
+            const cartTitle = document.getElementById('cart-title');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const saleBtn = document.getElementById('sale-mode-btn');
+            const returnBtn = document.getElementById('return-mode-btn');
+
+            if (mode === 'return') {
+                cartBox.classList.add('return-mode');
+                cartTitle.innerText = 'فاتورة مرتجع ↩';
+                checkoutBtn.innerText = 'إتمام عملية المرتجع';
+                checkoutBtn.className = 'btn btn-danger';
+                saleBtn.className = 'mode-btn';
+                returnBtn.className = 'mode-btn active-return';
+            } else {
+                cartBox.classList.remove('return-mode');
+                cartTitle.innerText = 'الفاتورة الحالية (مبيعات)';
+                checkoutBtn.innerText = 'إتمام عملية البيع';
+                checkoutBtn.className = 'btn btn-green';
+                saleBtn.className = 'mode-btn active-sale';
+                returnBtn.className = 'mode-btn';
+            }
+        }
+
         function renderProducts() {
             const grid = document.getElementById('pos-products');
             grid.innerHTML = '';
@@ -493,7 +570,6 @@
                 return;
             }
 
-            // عرض كل منتج كأيقونة واحدة فريدة تماماً
             products.forEach(p => {
                 const stockClass = p.qty <= 0 ? 'out-of-stock' : '';
                 grid.innerHTML += `
@@ -544,7 +620,6 @@
             const newPurchase = { id: Date.now(), name, cost, price, qty };
             purchaseHistory.unshift(newPurchase);
 
-            // إضافة الكمية لنفس المنتج إذا كان موجوداً مسبقاً باسمه
             const existing = products.find(p => p.name.trim() === name);
             if(existing) {
                 existing.qty += qty;
@@ -584,14 +659,16 @@
 
         function addToCart(id) {
             const prod = products.find(p => p.id === id);
-            if(!prod || prod.qty <= 0) {
+            if(!prod) return;
+
+            if(cartMode === 'sale' && prod.qty <= 0) {
                 alert('المنتج غير متوفر بالمخزن حالياً!');
                 return;
             }
 
             const item = cart.find(c => c.id === id);
             if(item) {
-                if(item.qty + 1 > prod.qty) {
+                if(cartMode === 'sale' && item.qty + 1 > prod.qty) {
                     alert('وصلت للحد الأقصى المتوفر بالمخزن');
                     return;
                 }
@@ -609,7 +686,8 @@
             if(!item) return;
 
             item.qty += delta;
-            if(item.qty > prod.qty) {
+
+            if(cartMode === 'sale' && item.qty > prod.qty) {
                 alert('وصلت للحد الأقصى للكمية المتاحة');
                 item.qty = prod.qty;
             }
@@ -659,17 +737,21 @@
                 return;
             }
 
-            let saleTotal = 0;
-            let saleProfit = 0;
-            let soldItems = [];
+            let totalVal = 0;
+            let profitVal = 0;
+            let itemsList = [];
 
             cart.forEach(item => {
                 const prod = products.find(p => p.id === item.id);
                 if(prod) {
-                    prod.qty -= item.qty;
-                    saleTotal += item.price * item.qty;
-                    saleProfit += (item.price - item.cost) * item.qty;
-                    soldItems.push(`${item.name} (${item.qty})`);
+                    if(cartMode === 'sale') {
+                        prod.qty -= item.qty;
+                    } else {
+                        prod.qty += item.qty; // إضافة للمخزن في حالة المرتجع
+                    }
+                    totalVal += item.price * item.qty;
+                    profitVal += (item.price - item.cost) * item.qty;
+                    itemsList.push(`${item.name} (${item.qty})`);
                 }
             });
 
@@ -680,15 +762,21 @@
                 id: invoiceNum,
                 date: now.toISOString().split('T')[0],
                 time: now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }),
-                items: soldItems.join('، '),
-                total: saleTotal,
-                profit: saleProfit
+                type: cartMode === 'sale' ? 'بيع' : 'مرتجع',
+                items: itemsList.join('، '),
+                total: cartMode === 'sale' ? totalVal : -totalVal,
+                profit: cartMode === 'sale' ? profitVal : -profitVal
             });
 
             cart = [];
             renderCart();
             saveProducts();
             saveSales();
+
+            // العودة إلى وضع البيع تلقائياً بعد المرتجع
+            if(cartMode === 'return') {
+                setCartMode('sale');
+            }
 
             const alertBox = document.getElementById('checkout-alert');
             alertBox.style.display = 'block';
@@ -710,34 +798,38 @@
             table.innerHTML = '';
 
             if(todaySales.length === 0) {
-                table.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد فواتير مبيعات اليوم.</td></tr>';
+                table.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد عمليات اليوم.</td></tr>';
             }
 
             todaySales.forEach(s => {
                 totalSales += s.total;
                 totalProfit += s.profit;
 
+                const isReturn = s.type === 'مرتجع';
+                const badgeColor = isReturn ? 'color: var(--danger); font-weight: bold;' : 'color: var(--green); font-weight: bold;';
+
                 table.innerHTML += `
                     <tr>
                         <td><strong>#${s.id}</strong></td>
                         <td>${s.time}</td>
+                        <td style="${badgeColor}">${s.type || 'بيع'}</td>
                         <td class="items-detail">${s.items}</td>
-                        <td><strong>${s.total.toLocaleString()} د.ع</strong></td>
-                        <td style="color: var(--green); font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
+                        <td style="${badgeColor}">${s.total.toLocaleString()} د.ع</td>
+                        <td style="${badgeColor}">${s.profit > 0 ? '+' : ''}${s.profit.toLocaleString()} د.ع</td>
                     </tr>
                 `;
             });
 
-            document.getElementById('today-count').innerText = `${todaySales.length} فاتورة`;
+            document.getElementById('today-count').innerText = `${todaySales.length} عملية`;
             document.getElementById('today-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
             document.getElementById('today-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
         }
 
         function mergeAndClearSales() {
-            if(confirm('هل أنت متاكد من تصفير ودمج فواتير المبيعات لهذا اليوم؟')) {
+            if(confirm('هل أنت متاكد من تصفير ودمج الفواتير لهذا اليوم؟')) {
                 salesHistory = [];
                 saveSales();
-                alert('تم تصفير ودمج الفواتير بنجاح!');
+                alert('تم التصفير والدمج بنجاح!');
             }
         }
 
