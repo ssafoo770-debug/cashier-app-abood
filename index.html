@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الكاشير والمبيعات</title>
+    <title>نظام الكاشير والمبيعات وإدارة الأرباح</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -40,11 +40,11 @@
             padding: 1.5rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
         .sidebar h2 {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             text-align: center;
             color: #60a5fa;
             border-bottom: 1px solid #334155;
@@ -76,8 +76,6 @@
             flex: 1;
             padding: 1.5rem;
             overflow-y: auto;
-            display: flex;
-            gap: 1.5rem;
         }
 
         .view-section {
@@ -140,6 +138,7 @@
             flex: 1;
             overflow-y: auto;
             margin: 1rem 0;
+            max-height: 400px;
         }
 
         .cart-item {
@@ -168,10 +167,11 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-top: 1rem;
         }
 
         th, td {
-            padding: 1rem;
+            padding: 0.9rem;
             text-align: right;
             border-bottom: 1px solid #e2e8f0;
         }
@@ -202,7 +202,7 @@
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
             margin-top: 1rem;
         }
@@ -214,6 +214,29 @@
             border: 1px solid #cbd5e1;
             border-radius: 6px;
         }
+
+        /* بطاقات التقارير الإحصائية */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-right: 5px solid var(--accent);
+        }
+
+        .stat-card.green { border-color: var(--green); }
+        .stat-card.blue { border-color: #0284c7; }
+
+        .stat-card h4 { color: #64748b; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -223,6 +246,7 @@
         <h2><i class="fa-solid fa-cart-shopping"></i> نظام الكاشير</h2>
         <button class="menu-btn active" onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> نقطة البيع</button>
         <button class="menu-btn" onclick="switchTab('inventory')"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزن</button>
+        <button class="menu-btn" onclick="switchTab('reports')"><i class="fa-solid fa-chart-line"></i> مبيعات وأرباح اليوم</button>
     </div>
 
     <!-- المحتوى -->
@@ -232,9 +256,7 @@
         <div id="pos-view" class="view-section active">
             <div class="products-container">
                 <h3>المنتجات المتاحة</h3>
-                <div class="products-grid" id="pos-products">
-                    <!-- سيتم إضافة المنتجات هنا ديناميكياً -->
-                </div>
+                <div class="products-grid" id="pos-products"></div>
             </div>
 
             <div class="cart-container">
@@ -262,7 +284,11 @@
                         <input type="text" id="prod-name" placeholder="مثال: شاي غمدان">
                     </div>
                     <div class="form-group">
-                        <label>السعر (د.ع)</label>
+                        <label>سعر التكلفة (الشراء)</label>
+                        <input type="number" id="prod-cost" placeholder="750">
+                    </div>
+                    <div class="form-group">
+                        <label>سعر البيع</label>
                         <input type="number" id="prod-price" placeholder="1000">
                     </div>
                     <div class="form-group">
@@ -278,26 +304,59 @@
                 <thead>
                     <tr>
                         <th>اسم المنتج</th>
-                        <th>السعر</th>
+                        <th>سعر التكلفة</th>
+                        <th>سعر البيع</th>
+                        <th>الربح المتوقع/قطعة</th>
                         <th>الكمية</th>
                         <th>الإجراء</th>
                     </tr>
                 </thead>
-                <tbody id="inventory-table">
-                    <!-- سيتم إضافة المنتجات هنا -->
-                </tbody>
+                <tbody id="inventory-table"></tbody>
+            </table>
+        </div>
+
+        <!-- قسم تقارير مبيعات اليوم -->
+        <div id="reports-view" class="view-section" style="flex-direction: column;">
+            <h3>تقارير وأرباح اليوم (<span id="current-date"></span>)</h3>
+            
+            <div class="stats-grid" style="margin-top: 1rem;">
+                <div class="stat-card blue">
+                    <h4>إجمالي مبيعات اليوم</h4>
+                    <div class="value" id="today-sales">0 د.ع</div>
+                </div>
+                <div class="stat-card green">
+                    <h4>إجمالي الربح الصافي</h4>
+                    <div class="value" id="today-profit">0 د.ع</div>
+                </div>
+                <div class="stat-card">
+                    <h4>نسبة الربح من المبيعات</h4>
+                    <div class="value" id="today-margin">0%</div>
+                </div>
+            </div>
+
+            <h3>سجل عمليات البيع اليوم</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الوقت</th>
+                        <th>المبيعات (الفاتورة)</th>
+                        <th>الربح الصافي</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-history-table"></tbody>
             </table>
         </div>
 
     </div>
 
     <script>
-        // تحميل البيانات من الذاكرة المحلية أو البدء بقائمة افتراضية
+        // تحميل البيانات المحفوظة
         let products = JSON.parse(localStorage.getItem('pos_products')) || [
-            { id: 1, name: 'ماء 500مل', price: 250, qty: 100 },
-            { id: 2, name: 'عصير برتقال', price: 1000, qty: 40 }
+            { id: 1, name: 'ماء 500مل', cost: 150, price: 250, qty: 100 },
+            { id: 2, name: 'عصير برتقال', cost: 700, price: 1000, qty: 40 }
         ];
 
+        let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
         let cart = [];
 
         function saveProducts() {
@@ -306,17 +365,24 @@
             renderInventory();
         }
 
+        function saveSales() {
+            localStorage.setItem('pos_sales_history', JSON.stringify(salesHistory));
+            renderReports();
+        }
+
         function switchTab(tab) {
             document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
 
             if(tab === 'pos') {
                 document.getElementById('pos-view').classList.add('active');
-                event.currentTarget.classList.add('active');
-            } else {
+            } else if(tab === 'inventory') {
                 document.getElementById('inventory-view').classList.add('active');
-                event.currentTarget.classList.add('active');
+            } else if(tab === 'reports') {
+                document.getElementById('reports-view').classList.add('active');
+                renderReports();
             }
+            event.currentTarget.classList.add('active');
         }
 
         function renderProducts() {
@@ -326,7 +392,7 @@
                 grid.innerHTML += `
                     <div class="product-card" onclick="addToCart(${p.id})">
                         <h4>${p.name}</h4>
-                        <div class="price">${p.price} د.ع</div>
+                        <div class="price">${p.price.toLocaleString()} د.ع</div>
                         <div class="qty">المتوفر: ${p.qty}</div>
                     </div>
                 `;
@@ -337,10 +403,13 @@
             const table = document.getElementById('inventory-table');
             table.innerHTML = '';
             products.forEach(p => {
+                const profitPerUnit = p.price - p.cost;
                 table.innerHTML += `
                     <tr>
-                        <td>${p.name}</td>
-                        <td>${p.price} د.ع</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.cost.toLocaleString()} د.ع</td>
+                        <td>${p.price.toLocaleString()} د.ع</td>
+                        <td style="color: var(--green); font-weight: bold;">+${profitPerUnit.toLocaleString()} د.ع</td>
                         <td>${p.qty}</td>
                         <td><button class="btn btn-danger" onclick="deleteProduct(${p.id})">حذف</button></td>
                     </tr>
@@ -350,18 +419,20 @@
 
         function addProduct() {
             const name = document.getElementById('prod-name').value;
+            const cost = parseFloat(document.getElementById('prod-cost').value);
             const price = parseFloat(document.getElementById('prod-price').value);
             const qty = parseInt(document.getElementById('prod-qty').value);
 
-            if(!name || !price || !qty) {
-                alert('يرجى إدخال جميع البيانات بشكل صحيح');
+            if(!name || isNaN(cost) || isNaN(price) || isNaN(qty)) {
+                alert('يرجى التأكد من ملء كافة البيانات وسعر التكلفة والسعر والكمية بشكل صحيح');
                 return;
             }
 
-            products.push({ id: Date.now(), name, price, qty });
+            products.push({ id: Date.now(), name, cost, price, qty });
             saveProducts();
 
             document.getElementById('prod-name').value = '';
+            document.getElementById('prod-cost').value = '';
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-qty').value = '';
         }
@@ -409,31 +480,80 @@
                     <div class="cart-item">
                         <div>
                             <strong>${c.name}</strong><br>
-                            <small>${c.price} × ${c.qty}</small>
+                            <small>${c.price.toLocaleString()} × ${c.qty}</small>
                         </div>
-                        <div><strong>${c.price * c.qty} د.ع</strong></div>
+                        <div><strong>${(c.price * c.qty).toLocaleString()} د.ع</strong></div>
                     </div>
                 `;
             });
 
-            document.getElementById('cart-total-price').innerText = `${total} د.ع`;
+            document.getElementById('cart-total-price').innerText = `${total.toLocaleString()} د.ع`;
         }
 
         function checkout() {
             if(cart.length === 0) return;
 
+            let saleTotal = 0;
+            let saleProfit = 0;
+
             cart.forEach(item => {
                 const prod = products.find(p => p.id === item.id);
-                if(prod) prod.qty -= item.qty;
+                if(prod) {
+                    prod.qty -= item.qty;
+                    saleTotal += item.price * item.qty;
+                    saleProfit += (item.price - item.cost) * item.qty;
+                }
+            });
+
+            // تسجيل العملية مع التاريخ والوقت
+            const now = new Date();
+            salesHistory.push({
+                date: now.toISOString().split('T')[0],
+                time: now.toLocaleTimeString('ar-IQ'),
+                total: saleTotal,
+                profit: saleProfit
             });
 
             cart = [];
             saveProducts();
+            saveSales();
             renderCart();
-            alert('تمت عملية البيع بنجاح وتحديث المخزن!');
+            alert('تمت عملية البيع بنجاح وحساب أرباحها!');
         }
 
-        // تشغيل العرض عند البدء
+        function renderReports() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('current-date').innerText = todayStr;
+
+            const todaySales = salesHistory.filter(s => s.date === todayStr);
+
+            let totalSales = 0;
+            let totalProfit = 0;
+
+            const table = document.getElementById('sales-history-table');
+            table.innerHTML = '';
+
+            todaySales.forEach(s => {
+                totalSales += s.total;
+                totalProfit += s.profit;
+
+                table.innerHTML += `
+                    <tr>
+                        <td>${s.time}</td>
+                        <td>${s.total.toLocaleString()} د.ع</td>
+                        <td style="color: var(--green); font-weight: bold;">+${s.profit.toLocaleString()} د.ع</td>
+                    </tr>
+                `;
+            });
+
+            const margin = totalSales > 0 ? ((totalProfit / totalSales) * 100).toFixed(1) : 0;
+
+            document.getElementById('today-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
+            document.getElementById('today-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
+            document.getElementById('today-margin').innerText = `${margin}%`;
+        }
+
+        // تشغيل العرض البدايات
         renderProducts();
         renderInventory();
     </script>
