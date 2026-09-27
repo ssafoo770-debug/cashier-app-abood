@@ -33,12 +33,12 @@
             position: relative;
         }
 
-        /* القائمة الجانبية المنزلقة تلقائياً عند مرور الماوس (Hover) */
+        /* القائمة الجانبية المنزلقة */
         .sidebar {
             position: fixed;
             top: 0;
             right: 0;
-            width: 70px; /* العرض وهي منكمشة (أيقونات فقط) */
+            width: 70px;
             height: 100vh;
             background: var(--primary);
             color: white;
@@ -53,7 +53,6 @@
             white-space: nowrap;
         }
 
-        /* عند تمرير الماوس فوق القائمة تنزلق وتفتح بالكامل */
         .sidebar:hover {
             width: 260px;
         }
@@ -134,23 +133,23 @@
             background: var(--danger);
         }
 
-        /* المحتوى الرئيسي للموقع */
+        /* المحتوى الرئيسي */
         .main-content {
             flex: 1;
             padding: 1.5rem;
-            margin-right: 70px; /* المسافة المتروكة للقائمة وهي منكمشة */
+            margin-right: 70px;
             overflow-y: auto;
             transition: margin-right 0.3s;
             width: calc(100% - 70px);
         }
 
         .view-section {
-            display: none;
+            display: none; /* إخفاء كافة الواجهات افتراضياً */
             width: 100%;
         }
 
         .view-section.active {
-            display: flex;
+            display: flex; /* إظهار الواجهة المحددة */
             gap: 1.5rem;
         }
 
@@ -278,11 +277,20 @@
 
         .btn-green { background: var(--green); }
         .btn-green:hover { background: #15803d; }
+
+        /* تنسيقات صفحات الأقسام الأخرى */
+        .content-box {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            width: 100%;
+        }
     </style>
 </head>
 <body>
 
-    <!-- القائمة الجانبية المنزلقة من جهة اليمين -->
+    <!-- القائمة الجانبية -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <i class="fa-solid fa-cart-shopping"></i>
@@ -294,27 +302,27 @@
             <div>المستخدم: <strong>admin</strong> (مدير)</div>
         </div>
 
-        <button class="menu-btn active" onclick="switchTab('pos')">
+        <button class="menu-btn active" id="btn-pos" onclick="switchTab('pos')">
             <i class="fa-solid fa-cash-register"></i>
             <span>نقطة البيع</span>
         </button>
 
-        <button class="menu-btn" onclick="switchTab('inventory')">
+        <button class="menu-btn" id="btn-inventory" onclick="switchTab('inventory')">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>إدارة المخزن والمشتريات</span>
         </button>
 
-        <button class="menu-btn" onclick="switchTab('reports')">
+        <button class="menu-btn" id="btn-reports" onclick="switchTab('reports')">
             <i class="fa-solid fa-chart-line"></i>
             <span>مبيعات وأرباح اليوم</span>
         </button>
 
-        <button class="menu-btn" onclick="switchTab('settings')">
+        <button class="menu-btn" id="btn-settings" onclick="switchTab('settings')">
             <i class="fa-solid fa-gear"></i>
             <span>الإعدادات والصلاحيات</span>
         </button>
 
-        <button class="menu-btn logout">
+        <button class="menu-btn logout" onclick="alert('تم تسجيل الخروج')">
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>تسجيل الخروج</span>
         </button>
@@ -323,7 +331,7 @@
     <!-- المحتوى الرئيسي -->
     <div class="main-content">
         
-        <!-- واجهة نقطة البيع -->
+        <!-- 1. واجهة نقطة البيع -->
         <div id="pos-view" class="view-section active">
             <div class="products-container">
                 <h3>المنتجات المتاحة</h3>
@@ -346,7 +354,6 @@
                 </div>
             </div>
 
-            <!-- سلة الفاتورة -->
             <div class="cart-container">
                 <div>
                     <h3>الفاتورة الحالية (مبيعات)</h3>
@@ -362,7 +369,6 @@
                         <span id="cart-subtotal">0 د.ع</span>
                     </div>
                     
-                    <!-- الخصم للمدير -->
                     <div class="cart-row">
                         <span>الخصم (خاص بالمدير):</span>
                         <div class="discount-input-group">
@@ -380,9 +386,52 @@
             </div>
         </div>
 
+        <!-- 2. واجهة إدارة المخزن والمشتريات -->
+        <div id="inventory-view" class="view-section">
+            <div class="content-box">
+                <h2>📦 إدارة المخزن والمشتريات</h2>
+                <p style="margin-top: 1rem; color: #64748b;">هنا يمكنك إضافة منتجات جديدة وتعديل الكميات في المخزن.</p>
+            </div>
+        </div>
+
+        <!-- 3. واجهة مبيعات وأرباح اليوم -->
+        <div id="reports-view" class="view-section">
+            <div class="content-box">
+                <h2>📈 مبيعات وأرباح اليوم</h2>
+                <p style="margin-top: 1rem; color: #64748b;">تقارير المبيعات اليومية والإحصائيات والملخص المالي.</p>
+            </div>
+        </div>
+
+        <!-- 4. واجهة الإعدادات والصلاحيات -->
+        <div id="settings-view" class="view-section">
+            <div class="content-box">
+                <h2>⚙️ الإعدادات والصلاحيات</h2>
+                <p style="margin-top: 1rem; color: #64748b;">إدارة المستخدمين، صلاحيات الكاشير، وإعدادات الطابعة.</p>
+            </div>
+        </div>
+
     </div>
 
     <script>
+        // دالة التنقل بين الأقسام
+        function switchTab(tabId) {
+            // إخفاء جميع الواجهات
+            const sections = document.querySelectorAll('.view-section');
+            sections.forEach(sec => sec.classList.remove('active'));
+
+            // إزالة التحديد عن جميع الأزرار
+            const buttons = document.querySelectorAll('.menu-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // إظهار الواجهة المطلوبة وتحديد زرها
+            const targetView = document.getElementById(tabId + '-view');
+            const targetBtn = document.getElementById('btn-' + tabId);
+
+            if(targetView) targetView.classList.add('active');
+            if(targetBtn) targetBtn.classList.add('active');
+        }
+
+        // سلة المبيعات
         let cart = [];
 
         function addToCart(name, price) {
