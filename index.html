@@ -588,11 +588,13 @@
                 profit: saleProfit
             });
 
+            // تفريغ السلة وتحديث الواجهة فوراً
             cart = [];
+            renderCart();
             saveProducts();
             saveSales();
-            renderCart();
 
+            // إظهار شريط النجاح
             const alertBox = document.getElementById('checkout-alert');
             alertBox.style.display = 'block';
             setTimeout(() => {
