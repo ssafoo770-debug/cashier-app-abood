@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الكاشير والمبيعات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --green: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* القائمة الجانبية */
+        .sidebar {
+            width: 250px;
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar h2 {
+            font-size: 1.3rem;
+            text-align: center;
+            color: #60a5fa;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 1rem;
+        }
+
+        .menu-btn {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            text-align: right;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .menu-btn:hover, .menu-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* المحتوى الرئيسي */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+        }
+
+        .view-section.active {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        /* قسم نقطة البيع */
+        .products-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .product-card {
+            background: var(--card);
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .product-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .product-card h4 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .product-card .price { color: var(--green); font-weight: 700; font-size: 1.1rem; }
+        .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.3rem; }
+
+        /* سلة المبيعات */
+        .cart-container {
+            flex: 1;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            margin: 1rem 0;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cart-total {
+            border-top: 2px dashed #cbd5e1;
+            padding-top: 1rem;
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        /* الجداول والنماذج */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th { background: #f1f5f9; color: var(--primary); }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-green { background: var(--green); }
+        .btn-danger { background: var(--danger); padding: 0.4rem 0.8rem; border-radius: 5px; }
+
+        .form-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+        .form-group input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- القائمة الجانبية -->
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-cart-shopping"></i> نظام الكاشير</h2>
+        <button class="menu-btn active" onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> نقطة البيع</button>
+        <button class="menu-btn" onclick="switchTab('inventory')"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزن</button>
+    </div>
+
+    <!-- المحتوى -->
+    <div class="main-content">
+        
+        <!-- قسم نقطة البيع -->
+        <div id="pos-view" class="view-section active">
+            <div class="products-container">
+                <h3>المنتجات المتاحة</h3>
+                <div class="products-grid" id="pos-products">
+                    <!-- سيتم إضافة المنتجات هنا ديناميكياً -->
+                </div>
+            </div>
+
+            <div class="cart-container">
+                <h3>قائمة الفاتورة</h3>
+                <div class="cart-items" id="cart-items">
+                    <p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>
+                </div>
+                <div>
+                    <div class="cart-total">
+                        <span>المجموع:</span>
+                        <span id="cart-total-price">0 د.ع</span>
+                    </div>
+                    <button class="btn btn-green" style="width: 100%;" onclick="checkout()">إتمام عملية البيع</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم المخزن -->
+        <div id="inventory-view" class="view-section" style="flex-direction: column;">
+            <div class="form-card">
+                <h3>إضافة منتج جديد للمخزن</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>اسم المنتج</label>
+                        <input type="text" id="prod-name" placeholder="مثال: شاي غمدان">
+                    </div>
+                    <div class="form-group">
+                        <label>السعر (د.ع)</label>
+                        <input type="number" id="prod-price" placeholder="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>الكمية المتاحة</label>
+                        <input type="number" id="prod-qty" placeholder="50">
+                    </div>
+                </div>
+                <button class="btn" style="margin-top: 1rem;" onclick="addProduct()">إضافة للمخزن</button>
+            </div>
+
+            <h3>قائمة المنتجات في المخزن</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>اسم المنتج</th>
+                        <th>السعر</th>
+                        <th>الكمية</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="inventory-table">
+                    <!-- سيتم إضافة المنتجات هنا -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        // تحميل البيانات من الذاكرة المحلية أو البدء بقائمة افتراضية
+        let products = JSON.parse(localStorage.getItem('pos_products')) || [
+            { id: 1, name: 'ماء 500مل', price: 250, qty: 100 },
+            { id: 2, name: 'عصير برتقال', price: 1000, qty: 40 }
+        ];
+
+        let cart = [];
+
+        function saveProducts() {
+            localStorage.setItem('pos_products', JSON.stringify(products));
+            renderProducts();
+            renderInventory();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+
+            if(tab === 'pos') {
+                document.getElementById('pos-view').classList.add('active');
+                event.currentTarget.classList.add('active');
+            } else {
+                document.getElementById('inventory-view').classList.add('active');
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('pos-products');
+            grid.innerHTML = '';
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div class="product-card" onclick="addToCart(${p.id})">
+                        <h4>${p.name}</h4>
+                        <div class="price">${p.price} د.ع</div>
+                        <div class="qty">المتوفر: ${p.qty}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderInventory() {
+            const table = document.getElementById('inventory-table');
+            table.innerHTML = '';
+            products.forEach(p => {
+                table.innerHTML += `
+                    <tr>
+                        <td>${p.name}</td>
+                        <td>${p.price} د.ع</td>
+                        <td>${p.qty}</td>
+                        <td><button class="btn btn-danger" onclick="deleteProduct(${p.id})">حذف</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addProduct() {
+            const name = document.getElementById('prod-name').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const qty = parseInt(document.getElementById('prod-qty').value);
+
+            if(!name || !price || !qty) {
+                alert('يرجى إدخال جميع البيانات بشكل صحيح');
+                return;
+            }
+
+            products.push({ id: Date.now(), name, price, qty });
+            saveProducts();
+
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-qty').value = '';
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id);
+            saveProducts();
+        }
+
+        function addToCart(id) {
+            const prod = products.find(p => p.id === id);
+            if(prod.qty <= 0) {
+                alert('المنتج نفد من المخزن!');
+                return;
+            }
+
+            const item = cart.find(c => c.id === id);
+            if(item) {
+                if(item.qty + 1 > prod.qty) {
+                    alert('الكمية المطلوبة غير متوفرة بالكامل');
+                    return;
+                }
+                item.qty++;
+            } else {
+                cart.push({ ...prod, qty: 1 });
+            }
+
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            if(cart.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>';
+                document.getElementById('cart-total-price').innerText = '0 د.ع';
+                return;
+            }
+
+            container.innerHTML = '';
+            let total = 0;
+
+            cart.forEach(c => {
+                total += c.price * c.qty;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${c.name}</strong><br>
+                            <small>${c.price} × ${c.qty}</small>
+                        </div>
+                        <div><strong>${c.price * c.qty} د.ع</strong></div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('cart-total-price').innerText = `${total} د.ع`;
+        }
+
+        function checkout() {
+            if(cart.length === 0) return;
+
+            cart.forEach(item => {
+                const prod = products.find(p => p.id === item.id);
+                if(prod) prod.qty -= item.qty;
+            });
+
+            cart = [];
+            saveProducts();
+            renderCart();
+            alert('تمت عملية البيع بنجاح وتحديث المخزن!');
+        }
+
+        // تشغيل العرض عند البدء
+        renderProducts();
+        renderInventory();
+    </script>
+</body>
+</html>
