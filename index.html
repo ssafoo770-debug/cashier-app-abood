@@ -74,6 +74,7 @@
             flex: 1;
             padding: 1.5rem;
             overflow-y: auto;
+            position: relative;
         }
 
         .view-section {
@@ -84,6 +85,11 @@
         .view-section.active {
             display: flex;
             gap: 1.5rem;
+        }
+
+        /* تعديل هنا لمنع تمدد السلة مع المنتجات */
+        #pos-view {
+            align-items: flex-start;
         }
 
         .products-container {
@@ -120,10 +126,21 @@
             transform: scale(0.97);
         }
 
+        /* شكل المنتج إذا خلص من المخزن */
+        .product-card.out-of-stock {
+            opacity: 0.6;
+            border-color: var(--danger);
+        }
+        .product-card.out-of-stock .qty {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
         .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--primary); }
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
         .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.4rem; }
 
+        /* تثبيت السلة بالشاشة */
         .cart-container {
             flex: 1;
             background: var(--card);
@@ -134,13 +151,16 @@
             flex-direction: column;
             justify-content: space-between;
             min-width: 340px;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 3rem); /* نفس ارتفاع الشاشة بالضبط */
         }
 
         .cart-items {
             flex: 1;
             overflow-y: auto;
             margin: 1rem 0;
-            max-height: 400px;
+            padding-right: 5px; /* مسافة بسيطة للسكرول */
         }
 
         .cart-item {
@@ -451,17 +471,16 @@
             const grid = document.getElementById('pos-products');
             grid.innerHTML = '';
             
-            // عرض المنتجات المتوفرة فقط بدون تكرار
-            const availableProducts = products.filter(p => p.qty > 0);
-
-            if(availableProducts.length === 0) {
+            if(products.length === 0) {
                 grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات متوفرة بالمخزن حالياً.</p>';
                 return;
             }
 
-            availableProducts.forEach(p => {
+            // عرض كل المنتجات، حتى اللي كميتها 0 راح تظل موجودة بس بشكل باهت
+            products.forEach(p => {
+                const stockClass = p.qty <= 0 ? 'out-of-stock' : '';
                 grid.innerHTML += `
-                    <div class="product-card" onclick="addToCart(${p.id})">
+                    <div class="product-card ${stockClass}" onclick="addToCart(${p.id})">
                         <h4>${p.name}</h4>
                         <div class="price">${p.price.toLocaleString()} د.ع</div>
                         <div class="qty">المتوفر: ${p.qty}</div>
@@ -536,9 +555,8 @@
 
             if(prod) {
                 prod.qty -= purchase.qty;
-                if(prod.qty <= 0) {
-                    products = products.filter(p => !(p.name === purchase.name && p.price === purchase.price));
-                }
+                if(prod.qty < 0) prod.qty = 0; // حتى ما تطلع الكمية بالسالب
+                // تم حذف الكود اللي يمسح المنتج حتى يبقى ظاهر بالشاشة
             }
 
             purchaseHistory.splice(phIndex, 1);
@@ -549,7 +567,7 @@
         function addToCart(id) {
             const prod = products.find(p => p.id === id);
             if(!prod || prod.qty <= 0) {
-                alert('المنتج غير متوفر بالمخزن!');
+                alert('المنتج غير متوفر بالمخزن حالياً!');
                 return;
             }
 
