@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الكاشير المتكامل</title>
+    <title>أسواق سيف - نظام الكاشير المتكامل</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -147,8 +147,57 @@
 
         .menu-btn i { font-size: 1.3rem; min-width: 35px; text-align: center; }
         .menu-btn:hover, .menu-btn.active { background: var(--accent); color: white; }
-        .menu-btn.logout { margin-top: auto; background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
+        .menu-btn.logout { background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
         .menu-btn.logout:hover { background: var(--danger); }
+
+        /* تذييل المبرمج في القائمة الجانبية */
+        .developer-footer {
+            margin-top: auto;
+            border-top: 1px solid #334155;
+            padding-top: 0.8rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow: hidden;
+        }
+
+        .developer-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .developer-info i {
+            min-width: 35px;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #38bdf8;
+        }
+
+        .dev-details {
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar:hover .dev-details {
+            opacity: 1;
+        }
+
+        .dev-name {
+            font-weight: bold;
+            color: #f1f5f9;
+        }
+
+        .dev-phone {
+            color: #38bdf8;
+            font-size: 0.75rem;
+            direction: ltr;
+            text-align: right;
+        }
 
         /* المحتوى الرئيسي */
         .main-content {
@@ -296,7 +345,7 @@
     <div id="login-overlay">
         <div class="login-card">
             <i class="fa-solid fa-lock" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
-            <h2>تسجيل الدخول للنظام</h2>
+            <h2>تسجيل الدخول - أسواق سيف</h2>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label>اسم المستخدم</label>
@@ -315,7 +364,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <i class="fa-solid fa-cart-shopping"></i>
-            <h2>كاشير الأسواق</h2>
+            <h2>أسواق سيف</h2>
         </div>
 
         <div class="user-badge">
@@ -347,6 +396,17 @@
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>تسجيل الخروج</span>
         </button>
+
+        <!-- معلومات المبرمج الثابتة في أسفل القائمة بكل الصفحات -->
+        <div class="developer-footer">
+            <div class="developer-info">
+                <i class="fa-solid fa-code"></i>
+                <div class="dev-details">
+                    <span class="dev-name">المبرمج سيف سامر</span>
+                    <span class="dev-phone">07888001875</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- المحتوى الرئيسي -->
@@ -375,7 +435,7 @@
                     </div>
                     
                     <div class="cart-row admin-only">
-                        <span>الخصم (خاص بالمدير/المصمم):</span>
+                        <span>الخصم:</span>
                         <div class="discount-input-group">
                             <input type="number" id="cart-discount" value="0" min="0" oninput="renderCartSummary()">
                         </div>
@@ -1021,7 +1081,7 @@
                     reportContent += `فاتورة #${s.id} - ${s.time} | المواد: ${s.items} | المجموع: ${s.total} د.ع | الربح: ${s.profit} د.ع\n`;
                 });
 
-                const blob = newBlob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+                const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
                 a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt`;
