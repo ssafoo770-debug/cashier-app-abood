@@ -34,7 +34,33 @@
             position: relative;
         }
 
-        /* القائمة الجانبية المنزلقة */
+        /* شاشة تسجيل الدخول */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .login-card h2 { margin-bottom: 1.5rem; color: var(--primary); }
+
+        /* القائمة الجانبية */
         .sidebar {
             position: fixed;
             top: 0;
@@ -54,9 +80,7 @@
             white-space: nowrap;
         }
 
-        .sidebar:hover {
-            width: 260px;
-        }
+        .sidebar:hover { width: 260px; }
 
         .sidebar-brand {
             display: flex;
@@ -69,12 +93,7 @@
             margin-bottom: 0.5rem;
         }
 
-        .sidebar-brand i {
-            font-size: 1.6rem;
-            min-width: 35px;
-            text-align: center;
-        }
-
+        .sidebar-brand i { font-size: 1.6rem; min-width: 35px; text-align: center; }
         .sidebar-brand h2 { font-size: 1.1rem; }
 
         .user-badge {
@@ -90,12 +109,7 @@
             overflow: hidden;
         }
 
-        .user-badge i {
-            min-width: 35px;
-            text-align: center;
-            font-size: 1.1rem;
-            color: #38bdf8;
-        }
+        .user-badge i { min-width: 35px; text-align: center; font-size: 1.1rem; color: #38bdf8; }
 
         .menu-btn {
             background: transparent;
@@ -111,26 +125,10 @@
             transition: all 0.2s;
         }
 
-        .menu-btn i {
-            font-size: 1.3rem;
-            min-width: 35px;
-            text-align: center;
-        }
-
-        .menu-btn:hover, .menu-btn.active {
-            background: var(--accent);
-            color: white;
-        }
-
-        .menu-btn.logout {
-            margin-top: auto;
-            background: #334155;
-            color: #f8fafc;
-        }
-
-        .menu-btn.logout:hover {
-            background: var(--danger);
-        }
+        .menu-btn i { font-size: 1.3rem; min-width: 35px; text-align: center; }
+        .menu-btn:hover, .menu-btn.active { background: var(--accent); color: white; }
+        .menu-btn.logout { margin-top: auto; background: #334155; color: #f8fafc; }
+        .menu-btn.logout:hover { background: var(--danger); }
 
         /* المحتوى الرئيسي */
         .main-content {
@@ -142,34 +140,13 @@
             width: calc(100% - 70px);
         }
 
-        .view-section {
-            display: none;
-            width: 100%;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+        .view-section { display: none; width: 100%; flex-direction: column; gap: 1.5rem; }
+        .view-section.active { display: flex; }
 
-        .view-section.active {
-            display: flex;
-        }
+        #pos-view.active { flex-direction: row; align-items: flex-start; }
 
-        #pos-view.active {
-            flex-direction: row;
-            align-items: flex-start;
-        }
-
-        .products-container {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 1rem;
-        }
+        .products-container { flex: 2; display: flex; flex-direction: column; gap: 1rem; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; }
 
         .product-card {
             background: var(--card);
@@ -183,11 +160,7 @@
             transition: all 0.15s ease-in-out;
         }
 
-        .product-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
-
+        .product-card:hover { border-color: var(--accent); transform: translateY(-2px); }
         .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--primary); }
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
         .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.4rem; }
@@ -206,11 +179,7 @@
             height: calc(100vh - 3rem);
         }
 
-        .cart-items {
-            flex: 1;
-            overflow-y: auto;
-            margin: 1rem 0;
-        }
+        .cart-items { flex: 1; overflow-y: auto; margin: 1rem 0; }
 
         .cart-item {
             display: flex;
@@ -220,51 +189,12 @@
             border-bottom: 1px solid #cbd5e1;
         }
 
-        .cart-item-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .qty-btn {
-            background: #cbd5e1;
-            border: none;
-            width: 26px;
-            height: 26px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .cart-summary {
-            border-top: 2px dashed #cbd5e1;
-            padding-top: 0.8rem;
-        }
-
-        .cart-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            font-size: 1rem;
-        }
-
-        .cart-row.total {
-            font-size: 1.3rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-top: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .discount-input-group input {
-            width: 90px;
-            padding: 0.4rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-weight: bold;
-            text-align: center;
-        }
+        .cart-item-controls { display: flex; align-items: center; gap: 8px; }
+        .qty-btn { background: #cbd5e1; border: none; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .cart-summary { border-top: 2px dashed #cbd5e1; padding-top: 0.8rem; }
+        .cart-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 1rem; }
+        .cart-row.total { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem; margin-bottom: 1rem; }
+        .discount-input-group input { width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; text-align: center; }
 
         .btn {
             background: var(--accent);
@@ -286,7 +216,6 @@
         .btn-danger { background: var(--danger); }
         .btn-warning { background: var(--warning); }
 
-        /* الكروت والنماذج والجداول */
         .content-box {
             background: var(--card);
             padding: 1.5rem;
@@ -295,89 +224,46 @@
             width: 100%;
         }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; text-align: right; }
+        .form-group label { font-size: 0.9rem; font-weight: bold; color: #475569; }
+        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
+        .custom-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .custom-table th, .custom-table td { padding: 0.8rem 1rem; text-align: right; border-bottom: 1px solid #e2e8f0; }
+        .custom-table th { background-color: #f1f5f9; color: var(--primary); font-weight: bold; }
 
-        .form-group label {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #475569;
-        }
-
-        .form-group input, .form-group select {
-            padding: 0.7rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        /* الجداول */
-        .custom-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        .custom-table th, .custom-table td {
-            padding: 0.8rem 1rem;
-            text-align: right;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .custom-table th {
-            background-color: #f1f5f9;
-            color: var(--primary);
-            font-weight: bold;
-        }
-
-        /* بطاقات الإحصائيات */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .stat-card {
-            background: var(--card);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 1.2rem;
-        }
-
-        .stat-card i {
-            font-size: 2.2rem;
-            padding: 1rem;
-            border-radius: 10px;
-        }
-
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.2rem; }
+        .stat-card i { font-size: 2.2rem; padding: 1rem; border-radius: 10px; }
         .stat-card.blue i { background: #e0f2fe; color: #0284c7; }
         .stat-card.green i { background: #dcfce7; color: #15803d; }
         .stat-card.purple i { background: #f3e8ff; color: #9333ea; }
-
         .stat-info h4 { font-size: 0.9rem; color: #64748b; margin-bottom: 0.3rem; }
         .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
+
+    <!-- شاشة تسجل الدخول -->
+    <div id="login-overlay">
+        <div class="login-card">
+            <i class="fa-solid fa-lock" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+            <h2>تسجيل الدخول للنظام</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>اسم المستخدم</label>
+                    <input type="text" id="login-username" required placeholder="أدخل اليوزر">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>كلمة السر</label>
+                    <input type="password" id="login-password" required placeholder="أدخل الباسورد">
+                </div>
+                <button type="submit" class="btn btn-green" style="width: 100%; font-size: 1.1rem;">دخول</button>
+            </form>
+        </div>
+    </div>
 
     <!-- القائمة الجانبية -->
     <div class="sidebar">
@@ -388,7 +274,7 @@
 
         <div class="user-badge">
             <i class="fa-solid fa-user-gear"></i>
-            <div>المستخدم: <strong id="current-user-name">admin</strong> (<span id="current-user-role">مدير</span>)</div>
+            <div>المستخدم: <strong id="current-user-name">---</strong> (<span id="current-user-role">---</span>)</div>
         </div>
 
         <button class="menu-btn active" id="btn-pos" onclick="switchTab('pos')">
@@ -411,9 +297,9 @@
             <span>الإعدادات والصلاحيات</span>
         </button>
 
-        <button class="menu-btn logout" onclick="switchUserPrompt()">
+        <button class="menu-btn logout" onclick="logout()">
             <i class="fa-solid fa-right-from-bracket"></i>
-            <span>تبديل المستخدم</span>
+            <span>تسجيل الخروج</span>
         </button>
     </div>
 
@@ -555,24 +441,9 @@
 
         <!-- 4. واجهة الإعدادات والصلاحيات -->
         <div id="settings-view" class="view-section">
-            <!-- النسخ الاحتياطي -->
-            <div class="content-box">
-                <h2>💾 النسخ الاحتياطي واستعادة البيانات</h2>
-                <p style="margin: 0.5rem 0 1rem 0; color: #64748b;">تنزيل أو استعادة كافة ملفات المخزون وسجل الفواتير والمستخدمين.</p>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-warning" onclick="downloadBackup()">
-                        <i class="fa-solid fa-download"></i> تحميل نسخة احتياطية
-                    </button>
-                    <button class="btn" onclick="document.getElementById('backup-file-input').click()">
-                        <i class="fa-solid fa-upload"></i> استرجاع نسخة احتياطية
-                    </button>
-                    <input type="file" id="backup-file-input" style="display: none;" accept=".json" onchange="restoreBackup(event)">
-                </div>
-            </div>
-
             <!-- إدارة المستخدمين -->
             <div class="content-box">
-                <h2>👥 إدارة المستخدمين والصلاحيات</h2>
+                <h2>👥 قائمة المستخدمين وتعديل الحسابات</h2>
                 <form id="add-user-form" onsubmit="handleAddUser(event)">
                     <div class="form-grid">
                         <div class="form-group">
@@ -580,8 +451,8 @@
                             <input type="text" id="new-username" placeholder="مثال: ali" required>
                         </div>
                         <div class="form-group">
-                            <label>كلمة السر</label>
-                            <input type="password" id="new-password" placeholder="****" required>
+                            <label>كلمة السر (الباسورد)</label>
+                            <input type="text" id="new-password" placeholder="أدخل كلمة السر" required>
                         </div>
                         <div class="form-group">
                             <label>الصلاحية</label>
@@ -594,25 +465,40 @@
                     <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ إضافة مستخدم جديد</button>
                 </form>
 
-                <h3 style="margin-top: 1.5rem;">قائمة المستخدمين الحاليين</h3>
+                <h3 style="margin-top: 1.5rem;">المستخدمين الحاليين بالنظام</h3>
                 <table class="custom-table">
                     <thead>
                         <tr>
-                            <th>اليوزر</th>
+                            <th>اليوزر (اسم المستخدم)</th>
+                            <th>كلمة السر</th>
                             <th>الصلاحية</th>
-                            <th>إجراء</th>
+                            <th>إجراءات والتعديل</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body"></tbody>
                 </table>
+            </div>
+
+            <!-- النسخ الاحتياطي -->
+            <div class="content-box">
+                <h2>💾 النسخ الاحتياطي واستعادة البيانات</h2>
+                <div style="display: flex; gap: 10px; margin-top: 1rem;">
+                    <button class="btn btn-warning" onclick="downloadBackup()">
+                        <i class="fa-solid fa-download"></i> تحميل نسخة احتياطية
+                    </button>
+                    <button class="btn" onclick="document.getElementById('backup-file-input').click()">
+                        <i class="fa-solid fa-upload"></i> استرجاع نسخة احتياطية
+                    </button>
+                    <input type="file" id="backup-file-input" style="display: none;" accept=".json" onchange="restoreBackup(event)">
+                </div>
             </div>
         </div>
 
     </div>
 
     <script>
-        // --- 1. البيانات والتخزين ---
-        let currentUser = { username: 'admin', role: 'admin' };
+        // --- 1. البيانات التخزينية ---
+        let currentUser = null;
 
         let users = JSON.parse(localStorage.getItem('cashier_users')) || [
             { username: 'admin', password: '123', role: 'admin' },
@@ -621,8 +507,7 @@
 
         let products = JSON.parse(localStorage.getItem('cashier_products')) || [
             { id: 1, name: 'شاي', cost: 1000, price: 1500, qty: 10 },
-            { id: 2, name: 'نسكافيه', cost: 4000, price: 6000, qty: 15 },
-            { id: 3, name: 'سيف', cost: 50, price: 100, qty: 20 }
+            { id: 2, name: 'نسكافيه', cost: 4000, price: 6000, qty: 15 }
         ];
 
         let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
@@ -636,8 +521,32 @@
             localStorage.setItem('cashier_inv_counter', invoiceCounter.toString());
         }
 
-        // --- 2. إدارة المستخدمين والصلاحيات ---
+        // --- 2. تسجيل الدخول والخروج ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+
+            const found = users.find(user => user.username === u && user.password === p);
+            if (found) {
+                currentUser = found;
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('login-username').value = '';
+                document.getElementById('login-password').value = '';
+                applyRolePermissions();
+            } else {
+                alert('اسم المستخدم أو كلمة السر غير صحيحة!');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('login-overlay').style.display = 'flex';
+        }
+
         function applyRolePermissions() {
+            if (!currentUser) return;
+
             document.getElementById('current-user-name').innerText = currentUser.username;
             document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير' : 'موظف';
 
@@ -646,26 +555,10 @@
                 el.style.display = (currentUser.role === 'admin') ? '' : 'none';
             });
 
-            if (currentUser.role !== 'admin') {
-                switchTab('pos');
-            }
+            switchTab('pos');
         }
 
-        function switchUserPrompt() {
-            const inputUser = prompt('أدخل اسم المستخدم:');
-            if (!inputUser) return;
-            const inputPass = prompt('أدخل كلمة السر:');
-
-            const found = users.find(u => u.username === inputUser && u.password === inputPass);
-            if (found) {
-                currentUser = found;
-                alert(`أهلاً بك يا ${found.username}، تم تسجيل الدخول بصلاحية: ${found.role === 'admin' ? 'مدير' : 'موظف'}`);
-                applyRolePermissions();
-            } else {
-                alert('اسم المستخدم أو كلمة السر غير صحيحة!');
-            }
-        }
-
+        // --- 3. إدارة المستخدمين وتعديل الحسابات ---
         function handleAddUser(e) {
             e.preventDefault();
             const u = document.getElementById('new-username').value.trim();
@@ -673,7 +566,7 @@
             const r = document.getElementById('new-role').value;
 
             if (users.find(user => user.username === u)) {
-                alert('اسم المستخدم هذا موجود مسبقاً!');
+                alert('اسم المستخدم موجود مسبقاً!');
                 return;
             }
 
@@ -684,9 +577,41 @@
             alert('تمت إضافة المستخدم بنجاح!');
         }
 
+        function editUser(oldUsername) {
+            let targetUser = users.find(u => u.username === oldUsername);
+            if (!targetUser) return;
+
+            let newName = prompt("تعديل اسم المستخدم (اليوزر):", targetUser.username);
+            if (!newName) return;
+            newName = newName.trim();
+
+            if (newName !== oldUsername && users.find(u => u.username === newName)) {
+                alert("اسم المستخدم الجديد موجود بالفعل!");
+                return;
+            }
+
+            let newPass = prompt("تعديل كلمة السر (الباسورد):", targetUser.password);
+            if (!newPass) return;
+            newPass = newPass.trim();
+
+            let newRole = prompt("تحديد الصلاحية (اكتب admin للمدير أو staff للموظف):", targetUser.role);
+            if (newRole !== 'admin' && newRole !== 'staff') {
+                alert("الصلاحية غير صحيحة! يجب إدخال admin أو staff.");
+                return;
+            }
+
+            targetUser.username = newName;
+            targetUser.password = newPass;
+            targetUser.role = newRole;
+
+            saveData();
+            renderUsersTable();
+            alert("تم تعديل بيانات المستخدم بنجاح!");
+        }
+
         function deleteUser(username) {
             if (username === 'admin') {
-                alert('لا يمكنك حذف المدير الرئيسي!');
+                alert('لا يمكنك حذف المدير الرئيسي النظام!');
                 return;
             }
             if (confirm(`هل أنت تأكد من حذف المستخدم ${username}؟`)) {
@@ -703,18 +628,20 @@
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${u.username}</strong></td>
-                        <td>${u.role === 'admin' ? 'مدير' : 'موظف'}</td>
+                        <td><code>${u.password}</code></td>
+                        <td>${u.role === 'admin' ? '<span style="color:blue;font-weight:bold;">مدير</span>' : 'موظف'}</td>
                         <td>
-                            ${u.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser('${u.username}')">حذف</button>` : 'أساسي'}
+                            <button class="btn btn-warning" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="editUser('${u.username}')">تعديل</button>
+                            ${u.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteUser('${u.username}')">حذف</button>` : ''}
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // --- 3. التنقل بين الواجهات ---
+        // --- 4. التنقل والمخزن وPOS ---
         function switchTab(tabId) {
-            if (currentUser.role !== 'admin' && tabId !== 'pos') {
+            if (currentUser && currentUser.role !== 'admin' && tabId !== 'pos') {
                 alert('عذراً! هذه الخانة مخصصة للمدير فقط.');
                 return;
             }
@@ -734,7 +661,6 @@
             if (tabId === 'settings') renderUsersTable();
         }
 
-        // --- 4. إدارة المخزن ---
         function handleAddProduct(e) {
             e.preventDefault();
             const name = document.getElementById('prod-name').value.trim();
@@ -784,7 +710,6 @@
             });
         }
 
-        // --- 5. نقطة البيع (POS) ---
         function renderPOS() {
             const grid = document.getElementById('pos-products-grid');
             grid.innerHTML = '';
@@ -839,11 +764,7 @@
             let subtotal = 0;
             cart.forEach(c => { subtotal += c.price * c.qty; });
 
-            let discount = 0;
-            if (currentUser.role === 'admin') {
-                discount = parseFloat(document.getElementById('cart-discount').value) || 0;
-            }
-
+            let discount = (currentUser && currentUser.role === 'admin') ? (parseFloat(document.getElementById('cart-discount').value) || 0) : 0;
             let finalTotal = subtotal - discount;
             if (finalTotal < 0) finalTotal = 0;
 
@@ -898,7 +819,7 @@
                 if (p) p.qty -= c.qty;
             });
 
-            let discount = (currentUser.role === 'admin') ? (parseFloat(document.getElementById('cart-discount').value) || 0) : 0;
+            let discount = (currentUser && currentUser.role === 'admin') ? (parseFloat(document.getElementById('cart-discount').value) || 0) : 0;
             let finalTotal = subtotal - discount;
             if (finalTotal < 0) finalTotal = 0;
 
@@ -922,7 +843,7 @@
             renderPOS();
         }
 
-        // --- 6. مبيعات اليوم وتصفير الحساب ---
+        // --- 5. التقارير والتصفير ---
         function renderReports() {
             document.getElementById('stat-invoices-count').innerText = salesHistory.length;
 
@@ -965,17 +886,15 @@
                 return;
             }
 
-            if (confirm('هل أنت تأكد من تصفير الحساب والبدء بيوم جديد؟ سيمسح سجل اليوم وسيتم تحميل ملخص الحساب تلقائياً.')) {
+            if (confirm('هل أنت تأكد من تصفير الحساب والبدء بيوم جديد؟')) {
                 let totalSales = 0;
                 let totalProfit = 0;
                 salesHistory.forEach(s => { totalSales += s.total; totalProfit += s.profit; });
 
-                // إنشاء كشف حساب وتنزيله ملف نصي
                 let reportContent = `--- تقرير تصفير اليوم (${new Date().toLocaleDateString('ar-IQ')}) ---\n`;
                 reportContent += `عدد الفواتير: ${salesHistory.length}\n`;
                 reportContent += `إجمالي المبيعات: ${totalSales.toLocaleString()} د.ع\n`;
                 reportContent += `صافي الأرباح: ${totalProfit.toLocaleString()} د.ع\n\n`;
-                reportContent += `تفاصيل الفواتير:\n`;
 
                 salesHistory.forEach(s => {
                     reportContent += `فاتورة #${s.id} - ${s.time} | المواد: ${s.items} | المجموع: ${s.total} د.ع | الربح: ${s.profit} د.ع\n`;
@@ -987,23 +906,16 @@
                 a.download = `تقرير_تصفير_اليوم_${new Date().toISOString().slice(0, 10)}.txt`;
                 a.click();
 
-                // تصفير البيانات
                 salesHistory = [];
                 saveData();
                 renderReports();
-                alert('تمت عملية تصفير الحساب بنجاح وتنزيل تقرير اليوم!');
+                alert('تمت عملية تصفير الحساب بنجاح وتنزيل التقرير!');
             }
         }
 
-        // --- 7. النسخ الاحتياطي واسترجاعه ---
+        // --- 6. النسخ الاحتياطي ---
         function downloadBackup() {
-            const backupData = {
-                users,
-                products,
-                salesHistory,
-                invoiceCounter
-            };
-
+            const backupData = { users, products, salesHistory, invoiceCounter };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
@@ -1021,23 +933,14 @@
                         products = importedData.products;
                         salesHistory = importedData.salesHistory || [];
                         invoiceCounter = importedData.invoiceCounter || 1;
-
                         saveData();
                         alert('تم استرجاع النسخة الاحتياطية بنجاح!');
                         location.reload();
-                    } else {
-                        alert('الملف غير صالح أو متضرر!');
                     }
-                } catch (err) {
-                    alert('حدث خطأ أثناء قراءة الملف!');
-                }
+                } catch (err) { alert('حدث خطأ أثناء قراءة الملف!'); }
             };
             fileReader.readAsText(event.target.files[0]);
         }
-
-        // التشغيل الأولي
-        applyRolePermissions();
-        renderPOS();
     </script>
 </body>
 </html>
