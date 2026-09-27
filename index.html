@@ -481,6 +481,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>الباركود</th>
                             <th>اسم المنتج</th>
                             <th>سعر التكلفة</th>
                             <th>سعر البيع</th>
@@ -492,15 +493,19 @@
             </div>
         </div>
 
-        <!-- 4. المشتريات (فاتورة مشتريات متعددة المواد) -->
+        <!-- 4. المشتريات (فاتورة مشتريات متعددة المواد مع الباركود) -->
         <div id="purchases-view" class="view-section">
             <div class="content-box">
                 <h2>📦 إدخال فاتورة مشتريات جديدة (أكثر من مادة)</h2>
-                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">أضف المواد لتطابق إجمالي التكلفة مع الفاتورة الورقية التي لديك.</p>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">أدخل الباركود لاسترجاع اسم المنتج وسعر التكلفة السابق بشكل تلقائي.</p>
                 
                 <form id="add-purchase-item-form" onsubmit="handleAddToPurchaseInvoice(event)" style="margin-top: 1.2rem; background: var(--table-header); padding: 1rem; border-radius: 10px;">
                     <h4 style="margin-bottom: 0.8rem; color: var(--accent);">إضافة مادة للفاتورة الحالية</h4>
                     <div class="form-grid">
+                        <div class="form-group">
+                            <label>باركود المادة</label>
+                            <input type="text" id="p-item-barcode" placeholder="امسح أو اكتب الباركود" oninput="checkBarcodeExists(this.value)">
+                        </div>
                         <div class="form-group">
                             <label>اسم المنتج</label>
                             <input type="text" id="p-item-name" placeholder="مثال: نسكافيه" required>
@@ -526,6 +531,7 @@
                     <table class="custom-table">
                         <thead>
                             <tr>
+                                <th>باركود</th>
                                 <th>اسم المنتج</th>
                                 <th>سعر التكلفة</th>
                                 <th>سعر البيع</th>
@@ -535,7 +541,7 @@
                             </tr>
                         </thead>
                         <tbody id="purchase-invoice-items-body">
-                            <tr><td colspan="6" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>
+                            <tr><td colspan="7" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>
                         </tbody>
                     </table>
 
@@ -555,6 +561,7 @@
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>الباركود</th>
                             <th>اسم المنتج</th>
                             <th>سعر التكلفة</th>
                             <th>سعر البيع</th>
@@ -615,7 +622,7 @@
                 </table>
             </div>
 
-            <!-- قسم التقرير الشهري والمخصص الجديد -->
+            <!-- التقرير الشهري والمخصص -->
             <div class="content-box" style="border: 2px dashed var(--accent);">
                 <h2>📅 التقرير المخصص (من تاريخ إلى تاريخ)</h2>
                 <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">اختر الفترة المطلوبة لعرض المبيعات والأرباح بدقة دون تغيير البيانات.</p>
@@ -743,8 +750,8 @@
         ];
 
         let products = JSON.parse(localStorage.getItem('cashier_products')) || [
-            { id: 1, name: 'شاي', cost: 1000, price: 1500, qty: 10 },
-            { id: 2, name: 'نسكافيه', cost: 4000, price: 6000, qty: 15 }
+            { id: 1, barcode: '1001', name: 'شاي', cost: 1000, price: 1500, qty: 10 },
+            { id: 2, barcode: '1002', name: 'نسكافيه', cost: 4000, price: 6000, qty: 15 }
         ];
 
         let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
@@ -975,7 +982,6 @@
             let totalCost = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
             let invoiceProfit = total - totalCost;
 
-            // خصم الكميات من منتجات المحل
             cart.forEach(cartItem => {
                 let prod = products.find(p => p.id === cartItem.id);
                 if (prod) {
@@ -984,7 +990,7 @@
             });
 
             let now = new Date();
-            let dateString = now.toISOString().slice(0, 10); // تنسيق YYYY-MM-DD
+            let dateString = now.toISOString().slice(0, 10);
             let timeString = now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
 
             salesHistory.push({
@@ -1058,10 +1064,12 @@
             
             let totalCapitalCost = 0;
             products.forEach((prod, index) => {
+                let barcodeText = prod.barcode ? prod.barcode : '<span style="color:#94a3b8">بدون باركود</span>';
                 totalCapitalCost += (prod.cost * prod.qty);
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
+                    <td>${barcodeText}</td>
                     <td>${prod.name}</td>
                     <td>${prod.cost} د.ع</td>
                     <td>${prod.price} د.ع</td>
@@ -1073,15 +1081,29 @@
             if (costValElem) costValElem.innerText = totalCapitalCost + ' د.ع';
         }
 
-        // --- 4. المشتريات وفاتورة الشراء ---
+        // --- 4. المشتريات وفاتورة الشراء مع الباركود الذكي ---
+        function checkBarcodeExists(barcodeVal) {
+            barcodeVal = barcodeVal.trim();
+            if (!barcodeVal) return;
+
+            let foundProd = products.find(p => p.barcode === barcodeVal);
+            if (foundProd) {
+                document.getElementById('p-item-name').value = foundProd.name;
+                document.getElementById('p-item-cost').value = foundProd.cost;
+                document.getElementById('p-item-price').value = foundProd.price;
+            }
+        }
+
         function handleAddToPurchaseInvoice(e) {
             e.preventDefault();
+            const barcode = document.getElementById('p-item-barcode').value.trim();
             const name = document.getElementById('p-item-name').value.trim();
             const cost = parseFloat(document.getElementById('p-item-cost').value);
             const price = parseFloat(document.getElementById('p-item-price').value);
             const qty = parseInt(document.getElementById('p-item-qty').value);
 
             currentPurchaseInvoice.push({
+                barcode: barcode,
                 name: name,
                 cost: cost,
                 price: price,
@@ -1097,7 +1119,7 @@
             if (!tbody) return;
             
             if (currentPurchaseInvoice.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>`;
                 document.getElementById('purchase-invoice-total-val').innerText = '0 د.ع';
                 return;
             }
@@ -1107,8 +1129,10 @@
             currentPurchaseInvoice.forEach((item, index) => {
                 let itemTotal = item.cost * item.qty;
                 totalInvoiceCost += itemTotal;
+                let bCodeDisplay = item.barcode ? item.barcode : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td>${bCodeDisplay}</td>
                     <td>${item.name}</td>
                     <td>${item.cost} د.ع</td>
                     <td>${item.price} د.ع</td>
@@ -1133,8 +1157,16 @@
             }
 
             currentPurchaseInvoice.forEach(invItem => {
-                let existingProd = products.find(p => p.name === invItem.name);
+                let existingProd = null;
+                if (invItem.barcode) {
+                    existingProd = products.find(p => p.barcode === invItem.barcode);
+                }
+                if (!existingProd) {
+                    existingProd = products.find(p => p.name === invItem.name);
+                }
+
                 if (existingProd) {
+                    if (invItem.barcode) existingProd.barcode = invItem.barcode;
                     existingProd.cost = invItem.cost;
                     existingProd.price = invItem.price;
                     existingProd.qty += invItem.qty;
@@ -1142,6 +1174,7 @@
                     let newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
                     products.push({
                         id: newId,
+                        barcode: invItem.barcode || '',
                         name: invItem.name,
                         cost: invItem.cost,
                         price: invItem.price,
@@ -1161,9 +1194,11 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             products.forEach((prod, index) => {
+                let bCodeText = prod.barcode ? prod.barcode : '<span style="color:#94a3b8">بدون</span>';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
+                    <td>${bCodeText}</td>
                     <td>${prod.name}</td>
                     <td>${prod.cost} د.ع</td>
                     <td>${prod.price} د.ع</td>
@@ -1284,7 +1319,7 @@
             }
         }
 
-        // --- 6. الإعدادات (المستخدمين والنسخ الاحتياطي) ---
+        // --- 6. الإعدادات ---
         function handleAddUser(e) {
             e.preventDefault();
             const u = document.getElementById('new-username').value.trim();
