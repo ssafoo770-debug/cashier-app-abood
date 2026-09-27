@@ -1,142 +1,1371 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>قائمة جانبية منزلقة</title>
-  <style>
-    /* 1. التنسيقات العامة */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f4f6f9;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الكاشير المتكامل</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --green: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
 
-    /* زر فتح القائمة */
-    .toggle-btn {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+        }
 
-    .toggle-btn:hover {
-      background-color: #2980b9;
-    }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    /* 2. تنسيق القائمة الجانبية المنزلقة */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      right: -260px; /* إخفاء القائمة جهة اليمين خارج الشاشة */
-      width: 250px;
-      height: 100%;
-      background-color: #2c3e50;
-      color: #fff;
-      transition: right 0.3s ease; /* حركة الانزلاق السلسة */
-      z-index: 1000;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.2);
-    }
+        /* شاشة تسجيل الدخول */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
 
-    /* عند إضافة كلاس active تظهر القائمة */
-    .sidebar.active {
-      right: 0;
-    }
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
 
-    /* زر الإغلاق داخل القائمة */
-    .close-btn {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      font-size: 24px;
-      background: none;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-    }
+        .login-card h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
 
-    /* روابط القائمة */
-    .sidebar ul {
-      list-style: none;
-      padding: 60px 0 0 0;
-      margin: 0;
-    }
+        .login-card .form-group {
+            text-align: right;
+            margin-bottom: 1.2rem;
+        }
 
-    .sidebar ul li a {
-      display: block;
-      padding: 15px 25px;
-      color: #ecf0f1;
-      text-decoration: none;
-      border-bottom: 1px solid #34495e;
-      transition: background 0.2s;
-    }
+        /* القائمة الجانبية */
+        .sidebar {
+            width: 260px;
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
 
-    .sidebar ul li a:hover {
-      background-color: #34495e;
-    }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            text-align: center;
+            color: #60a5fa;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 1rem;
+        }
 
-    /* 3. خلفية معتمة عند فتح القائمة */
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      z-index: 999;
-    }
+        .user-badge {
+            background: #1e293b;
+            padding: 0.6rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
 
-    .overlay.active {
-      display: block;
-    }
-  </style>
+        .user-badge strong {
+            color: #38bdf8;
+        }
+
+        .menu-btn {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            text-align: right;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover, .menu-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .menu-btn.logout {
+            margin-top: auto;
+            background: #334155;
+            color: #f8fafc;
+        }
+
+        .menu-btn.logout:hover {
+            background: var(--danger);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+        }
+
+        .view-section.active {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        #pos-view {
+            align-items: flex-start;
+        }
+
+        .products-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 1rem;
+        }
+
+        .product-card {
+            background: var(--card);
+            padding: 1.2rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            user-select: none;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .product-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .product-card:active {
+            transform: scale(0.97);
+        }
+
+        .product-card.out-of-stock {
+            opacity: 0.6;
+            border-color: var(--danger);
+        }
+        .product-card.out-of-stock .qty {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--primary); }
+        .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
+        .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.4rem; }
+        .product-card .barcode-tag { font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem; }
+
+        /* سلة الفاتورة */
+        .cart-container {
+            flex: 1;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 340px;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 3rem);
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .cart-container.return-mode {
+            background-color: #fef2f2;
+            border-color: var(--danger);
+        }
+
+        .cart-container.return-mode h3 {
+            color: var(--danger);
+        }
+
+        .mode-toggle-container {
+            display: flex;
+            background: #e2e8f0;
+            border-radius: 8px;
+            padding: 4px;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            background: transparent;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active-sale {
+            background: var(--accent);
+            color: white;
+        }
+
+        .mode-btn.active-return {
+            background: var(--danger);
+            color: white;
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            margin: 1rem 0;
+            padding-right: 5px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #cbd5e1;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qty-btn {
+            background: #cbd5e1;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .cart-total {
+            border-top: 2px dashed #cbd5e1;
+            padding-top: 1rem;
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        th, td {
+            padding: 0.9rem;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th { background: #f1f5f9; color: var(--primary); }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-green { background: var(--green); }
+        .btn-green:hover { background: #15803d; }
+        .btn-danger { background: var(--danger); padding: 0.8rem 1.5rem; border-radius: 8px; color: white; border: none; cursor: pointer; font-weight: bold; }
+
+        .form-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-right: 5px solid var(--accent);
+        }
+
+        .stat-card.green { border-color: var(--green); }
+        .stat-card.blue { border-color: #0284c7; }
+        .stat-card.orange { border-color: #f97316; }
+
+        .stat-card h4 { color: #64748b; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: #15803d;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .items-detail { font-size: 0.85rem; color: #64748b; }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-btn {
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .action-btn:hover { opacity: 0.85; }
+        .edit-btn { background: #eab308; color: white; }
+        .cancel-btn { background: var(--danger); color: white; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.8rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+    </style>
 </head>
 <body>
 
-  <!-- زر فتح القائمة الجانبية -->
-  <button id="openSidebarBtn" class="toggle-btn">☰ فتح القائمة</button>
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h2><i class="fa-solid fa-lock"></i> تسجيل الدخول</h2>
+            <div class="form-group">
+                <label>اسم المستخدم</label>
+                <input type="text" id="login-username" placeholder="اسم المستخدم">
+            </div>
+            <div class="form-group">
+                <label>كلمة السر</label>
+                <input type="password" id="login-password" placeholder="****">
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 1rem;" onclick="login()">دخول للنظام</button>
+        </div>
+    </div>
 
-  <!-- القائمة الجانبية -->
-  <div id="sidebar" class="sidebar">
-    <button id="closeSidebarBtn" class="close-btn">&times;</button>
-    <ul>
-      <li><a href="#">الرئيسية</a></li>
-      <li><a href="#">الخدمات</a></li>
-      <li><a href="#">عن الشركة</a></li>
-      <li><a href="#">اتصل بنا</a></li>
-    </ul>
-  </div>
+    <!-- القائمة الجانبية -->
+    <div class="sidebar">
+        <h2><i class="fa-solid fa-cart-shopping"></i> كاشير الأسواق</h2>
+        <div class="user-badge">المستخدم: <strong id="current-user-name">-</strong> (<span id="current-user-role">-</span>)</div>
 
-  <!-- الخلفية المعتمة -->
-  <div id="overlay" class="overlay"></div>
+        <button class="menu-btn active" id="nav-pos" onclick="switchTab('pos')"><i class="fa-solid fa-cash-register"></i> نقطة البيع</button>
+        <button class="menu-btn admin-only" id="nav-inventory" onclick="switchTab('inventory')"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزن والمشتريات</button>
+        <button class="menu-btn admin-only" id="nav-reports" onclick="switchTab('reports')"><i class="fa-solid fa-chart-line"></i> مبيعات وأرباح اليوم</button>
+        <button class="menu-btn admin-only" id="nav-settings" onclick="switchTab('settings')"><i class="fa-solid fa-gear"></i> الإعدادات والصلاحيات</button>
 
-  <!-- البرمجة (JavaScript) -->
-  <script>
-    const sidebar = document.getElementById('sidebar');
-    const openBtn = document.getElementById('openSidebarBtn');
-    const closeBtn = document.getElementById('closeSidebarBtn');
-    const overlay = document.getElementById('overlay');
+        <button class="menu-btn logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج</button>
+    </div>
 
-    // وظيفة فتح القائمة
-    openBtn.addEventListener('click', () => {
-      sidebar.classList.add('active');
-      overlay.classList.add('active');
-    });
+    <div class="main-content">
+        
+        <!-- نقطة البيع -->
+        <div id="pos-view" class="view-section active">
+            <div class="products-container">
+                <h3>المنتجات المتاحة</h3>
+                <div class="products-grid" id="pos-products"></div>
+            </div>
 
-    // وظيفة إغلاق القائمة
-    const closeSidebar = () => {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    };
+            <div class="cart-container" id="cart-box">
+                <div>
+                    <h3 id="cart-title">الفاتورة الحالية (مبيعات)</h3>
+                    
+                    <div class="mode-toggle-container admin-only">
+                        <button class="mode-btn active-sale" id="sale-mode-btn" onclick="setCartMode('sale')">بيع</button>
+                        <button class="mode-btn" id="return-mode-btn" onclick="setCartMode('return')">مرتجع ↩</button>
+                    </div>
 
-    closeBtn.addEventListener('click', closeSidebar);
-    overlay.addEventListener('click', closeSidebar);
-  </script>
+                    <div id="checkout-alert" class="alert-success">✓ تم إتمام العملية بنجاح!</div>
+                </div>
 
+                <div class="cart-items" id="cart-items">
+                    <p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>
+                </div>
+                <div>
+                    <div class="cart-total">
+                        <span>المجموع:</span>
+                        <span id="cart-total-price">0 د.ع</span>
+                    </div>
+                    <button class="btn btn-green" id="checkout-btn" style="width: 100%; font-size: 1.1rem; padding: 1rem;" onclick="checkout()">إتمام عملية البيع</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- المخزن والمشتريات -->
+        <div id="inventory-view" class="view-section" style="flex-direction: column;">
+            <div class="form-card">
+                <h3>إضافة فاتورة مشتريات جديدة للمخزن</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>رمز الباركود <i class="fa-solid fa-barcode"></i></label>
+                        <input type="text" id="prod-barcode" placeholder="امسح الباركود هنا..." oninput="autoFillByBarcode()">
+                    </div>
+                    <div class="form-group">
+                        <label>اسم المنتج</label>
+                        <input type="text" id="prod-name" placeholder="مثال: شاي سيف">
+                    </div>
+                    <div class="form-group">
+                        <label>سعر التكلفة (الشراء)</label>
+                        <input type="number" id="prod-cost" placeholder="750">
+                    </div>
+                    <div class="form-group">
+                        <label>سعر البيع</label>
+                        <input type="number" id="prod-price" placeholder="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>كمية المشتريات</label>
+                        <input type="number" id="prod-qty" placeholder="50">
+                    </div>
+                </div>
+                <button class="btn" style="margin-top: 1rem;" onclick="addProduct()">حفظ فاتورة المشتريات</button>
+            </div>
+
+            <h3>سجل فواتير المشتريات المضافة</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الباربود</th>
+                        <th>اسم المنتج</th>
+                        <th>سعر التكلفة</th>
+                        <th>سعر البيع</th>
+                        <th>الكمية المشتراة</th>
+                        <th>إجمالي التكلفة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="purchase-history-table"></tbody>
+            </table>
+        </div>
+
+        <!-- المبيعات والتقارير -->
+        <div id="reports-view" class="view-section" style="flex-direction: column;">
+            <div class="header-actions">
+                <h3>تقارير ومبيعات اليوم (<span id="current-date"></span>)</h3>
+                <button class="btn btn-danger" style="padding: 0.4rem 0.8rem;" onclick="mergeAndClearSales()"><i class="fa-solid fa-broom"></i> تصفير ودمج الفواتير</button>
+            </div>
+            
+            <div class="stats-grid" style="margin-top: 1rem;">
+                <div class="stat-card orange">
+                    <h4>عدد الفواتير</h4>
+                    <div class="value" id="today-count">0 فاتورة</div>
+                </div>
+                <div class="stat-card blue">
+                    <h4>إجمالي المبيعات (الصافي)</h4>
+                    <div class="value" id="today-sales">0 د.ع</div>
+                </div>
+                <div class="stat-card green">
+                    <h4>إجمالي الربح الصافي</h4>
+                    <div class="value" id="today-profit">0 د.ع</div>
+                </div>
+            </div>
+
+            <h3>سجل الفواتير المباعة والمرتجعة اليوم</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم الفاتورة</th>
+                        <th>الوقت</th>
+                        <th>النوع</th>
+                        <th>المنتجات</th>
+                        <th>القيمة</th>
+                        <th>الربح</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-history-table"></tbody>
+            </table>
+        </div>
+
+        <!-- الإعدادات والصلاحيات -->
+        <div id="settings-view" class="view-section" style="flex-direction: column;">
+            
+            <!-- النسخ الاحتياطي -->
+            <div class="settings-card">
+                <h3><i class="fa-solid fa-database"></i> النسخ الاحتياطي والاستعادة</h3>
+                <p style="color: #64748b; margin-top: 0.4rem; margin-bottom: 1rem;">حفظ نسخة كاملة من بيانات النظام أو استعادة بيانات سابقة.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-green" onclick="exportBackup()"><i class="fa-solid fa-download"></i> حفظ نسخة احتياطية</button>
+                    <button class="btn" onclick="document.getElementById('restore-file').click()"><i class="fa-solid fa-upload"></i> استعادة نسخة احتياطية</button>
+                    <input type="file" id="restore-file" style="display: none;" accept=".json" onchange="importBackup(event)">
+                </div>
+            </div>
+
+            <!-- إدارة المستخدمين -->
+            <div class="settings-card">
+                <h3><i class="fa-solid fa-users"></i> إدارة المستخدمين والصلاحيات</h3>
+                <div class="form-grid" style="margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>اسم المستخدم</label>
+                        <input type="text" id="new-username" placeholder="مثال: cashier1">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة السر</label>
+                        <input type="text" id="new-password" placeholder="مثال: 1234">
+                    </div>
+                    <div class="form-group">
+                        <label>الصلاحية</label>
+                        <select id="new-role">
+                            <option value="cashier">كاشير (بيع فقط)</option>
+                            <option value="admin">مدير (صلاحيات كاملة)</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="addUser()">إضافة مستخدم جديد</button>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">قائمة المستخدمين الحالية (مع كلمات السر)</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المستخدم</th>
+                            <th>كلمة السر</th>
+                            <th>الصلاحية</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table"></tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- مودال تعديل الشراء -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>تعديل فاتورة مشتريات</h3>
+                <button class="action-btn cancel-btn" onclick="closeEditModal()">✕</button>
+            </div>
+            <input type="hidden" id="edit-purchase-id">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>رمز الباركود</label>
+                <input type="text" id="edit-prod-barcode">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>اسم المنتج</label>
+                <input type="text" id="edit-prod-name">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>سعر التكلفة (الشراء)</label>
+                <input type="number" id="edit-prod-cost">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>سعر البيع</label>
+                <input type="number" id="edit-prod-price">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>الكمية المشتراة</label>
+                <input type="number" id="edit-prod-qty">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background: #64748b;" onclick="closeEditModal()">إلغاء</button>
+                <button class="btn btn-green" onclick="savePurchaseEdit()">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تعديل المستخدم -->
+    <div class="modal-overlay" id="edit-user-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>تعديل حساب مستخدم / كاشير</h3>
+                <button class="action-btn cancel-btn" onclick="closeEditUserModal()">✕</button>
+            </div>
+            <input type="hidden" id="edit-user-id">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>اسم المستخدم</label>
+                <input type="text" id="edit-user-username">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>كلمة السر الجديدة</label>
+                <input type="text" id="edit-user-password">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>الصلاحية</label>
+                <select id="edit-user-role">
+                    <option value="cashier">كاشير (بيع فقط)</option>
+                    <option value="admin">مدير (صلاحيات كاملة)</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background: #64748b;" onclick="closeEditUserModal()">إلغاء</button>
+                <button class="btn btn-green" onclick="saveUserEdit()">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let products = JSON.parse(localStorage.getItem('pos_products')) || [];
+        let purchaseHistory = JSON.parse(localStorage.getItem('pos_purchase_history')) || [];
+        let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
+        let users = JSON.parse(localStorage.getItem('pos_users')) || [
+            { id: 1, username: 'admin', password: '1234', role: 'admin' }
+        ];
+        
+        let currentUser = JSON.parse(localStorage.getItem('pos_current_user')) || null;
+        let cart = [];
+        let cartMode = 'sale';
+        let activeTab = 'pos';
+
+        /* الاستماع التلقائي لقارئ الباركود */
+        let barcodeBuffer = "";
+        let barcodeTimeout = null;
+
+        document.addEventListener('keydown', function(e) {
+            if(!currentUser) return;
+
+            // عدم التدخل إذا كان الكاشير يكتب في حقل إدخال عادي في غير حقل الباركود
+            const activeElem = document.activeElement;
+            if (activeElem && activeElem.tagName === 'INPUT' && activeElem.id !== 'prod-barcode') {
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                if (barcodeBuffer.trim().length > 0) {
+                    const code = barcodeBuffer.trim();
+                    barcodeBuffer = "";
+
+                    if (activeTab === 'pos') {
+                        handlePosBarcodeScan(code);
+                    }
+                }
+            } else if (e.key.length === 1) {
+                barcodeBuffer += e.key;
+                clearTimeout(barcodeTimeout);
+                barcodeTimeout = setTimeout(() => { barcodeBuffer = ""; }, 200);
+            }
+        });
+
+        function handlePosBarcodeScan(barcode) {
+            const prod = products.find(p => p.barcode && p.barcode === barcode);
+            if(prod) {
+                addToCart(prod.id);
+            } else {
+                alert(`لم يتم العثور على منتج بهذا الباركود: ${barcode}`);
+            }
+        }
+
+        function autoFillByBarcode() {
+            const barcodeInput = document.getElementById('prod-barcode').value.trim();
+            if(!barcodeInput) return;
+
+            const existingProd = products.find(p => p.barcode && p.barcode === barcodeInput);
+            if(existingProd) {
+                document.getElementById('prod-name').value = existingProd.name;
+                document.getElementById('prod-cost').value = existingProd.cost;
+                document.getElementById('prod-price').value = existingProd.price;
+                document.getElementById('prod-qty').focus();
+            }
+        }
+
+        function checkAuth() {
+            if(!currentUser) {
+                document.getElementById('login-screen').style.display = 'flex';
+            } else {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('current-user-name').innerText = currentUser.username;
+                document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير' : 'كاشير';
+
+                if(currentUser.role !== 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                } else {
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+                }
+            }
+        }
+
+        function login() {
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+
+            const found = users.find(user => user.username === u && user.password === p);
+            if(found) {
+                currentUser = found;
+                localStorage.setItem('pos_current_user', JSON.stringify(currentUser));
+                checkAuth();
+                switchTab('pos');
+            } else {
+                alert('اسم المستخدم أو كلمة السر غير صحيحة!');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('pos_current_user');
+            checkAuth();
+        }
+
+        function consolidateProducts() {
+            let consolidated = [];
+            products.forEach(p => {
+                let cleanName = p.name.trim();
+                let existing = consolidated.find(item => item.name.trim() === cleanName || (p.barcode && item.barcode === p.barcode));
+                if(existing) {
+                    existing.qty += p.qty;
+                    existing.price = p.price;
+                    existing.cost = p.cost;
+                    if(p.barcode) existing.barcode = p.barcode;
+                } else {
+                    consolidated.push({ ...p, name: cleanName });
+                }
+            });
+            products = consolidated;
+            localStorage.setItem('pos_products', JSON.stringify(products));
+        }
+
+        consolidateProducts();
+
+        function saveProducts() { consolidateProducts(); renderProducts(); }
+        function savePurchases() { localStorage.setItem('pos_purchase_history', JSON.stringify(purchaseHistory)); renderPurchaseHistory(); }
+        function saveSales() { localStorage.setItem('pos_sales_history', JSON.stringify(salesHistory)); renderReports(); }
+        function saveUsers() { localStorage.setItem('pos_users', JSON.stringify(users)); renderUsers(); }
+
+        function switchTab(tab) {
+            if(currentUser.role !== 'admin' && tab !== 'pos') {
+                alert('عذراً، هذه الخاصية متاحة للمدير فقط!');
+                return;
+            }
+
+            activeTab = tab;
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+
+            document.getElementById(`${tab}-view`).classList.add('active');
+            const navBtn = document.getElementById(`nav-${tab}`);
+            if(navBtn) navBtn.classList.add('active');
+
+            if(tab === 'inventory') {
+                setTimeout(() => { document.getElementById('prod-barcode').focus(); }, 100);
+            }
+
+            if(tab === 'reports') renderReports();
+            if(tab === 'settings') renderUsers();
+        }
+
+        function setCartMode(mode) {
+            cartMode = mode;
+            const cartBox = document.getElementById('cart-box');
+            const cartTitle = document.getElementById('cart-title');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const saleBtn = document.getElementById('sale-mode-btn');
+            const returnBtn = document.getElementById('return-mode-btn');
+
+            if (mode === 'return') {
+                cartBox.classList.add('return-mode');
+                cartTitle.innerText = 'فاتورة مرتجع ↩';
+                checkoutBtn.innerText = 'إتمام عملية المرتجع';
+                checkoutBtn.className = 'btn btn-danger';
+                if(saleBtn) saleBtn.className = 'mode-btn';
+                if(returnBtn) returnBtn.className = 'mode-btn active-return';
+            } else {
+                cartBox.classList.remove('return-mode');
+                cartTitle.innerText = 'الفاتورة الحالية (مبيعات)';
+                checkoutBtn.innerText = 'إتمام عملية البيع';
+                checkoutBtn.className = 'btn btn-green';
+                if(saleBtn) saleBtn.className = 'mode-btn active-sale';
+                if(returnBtn) returnBtn.className = 'mode-btn';
+            }
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('pos-products');
+            grid.innerHTML = '';
+            if(products.length === 0) {
+                grid.innerHTML = '<p style="color:#64748b;">لا توجد منتجات متوفرة بالمخزن حالياً.</p>';
+                return;
+            }
+            products.forEach(p => {
+                const stockClass = p.qty <= 0 ? 'out-of-stock' : '';
+                grid.innerHTML += `
+                    <div class="product-card ${stockClass}" onclick="addToCart(${p.id})">
+                        <h4>${p.name}</h4>
+                        <div class="price">${p.price.toLocaleString()} د.ع</div>
+                        <div class="qty">المتوفر: ${p.qty}</div>
+                        ${p.barcode ? `<div class="barcode-tag"><i class="fa-solid fa-barcode"></i> ${p.barcode}</div>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function renderPurchaseHistory() {
+            const table = document.getElementById('purchase-history-table');
+            table.innerHTML = '';
+            if(purchaseHistory.length === 0) {
+                table.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لا توجد فواتير مشتريات مضافة.</td></tr>';
+                return;
+            }
+            purchaseHistory.forEach(ph => {
+                const totalCost = ph.cost * ph.qty;
+                table.innerHTML += `
+                    <tr>
+                        <td><code>${ph.barcode || '-'}</code></td>
+                        <td><strong>${ph.name}</strong></td>
+                        <td>${ph.cost.toLocaleString()} د.ع</td>
+                        <td>${ph.price.toLocaleString()} د.ع</td>
+                        <td>${ph.qty}</td>
+                        <td><strong>${totalCost.toLocaleString()} د.ع</strong></td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="openEditModal(${ph.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="action-btn cancel-btn" onclick="deletePurchaseInvoice(${ph.id})">✕</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addProduct() {
+            const barcode = document.getElementById('prod-barcode').value.trim();
+            const name = document.getElementById('prod-name').value.trim();
+            const cost = parseFloat(document.getElementById('prod-cost').value);
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const qty = parseInt(document.getElementById('prod-qty').value);
+
+            if(!name || isNaN(cost) || isNaN(price) || isNaN(qty)) {
+                alert('يرجى ملء كافة معلومات المنتج بشكل صحيح');
+                return;
+            }
+
+            const newPurchase = { id: Date.now(), barcode, name, cost, price, qty };
+            purchaseHistory.unshift(newPurchase);
+
+            const existing = products.find(p => p.name.trim() === name || (barcode && p.barcode === barcode));
+            if(existing) {
+                existing.qty += qty;
+                existing.cost = cost;
+                existing.price = price;
+                if(barcode) existing.barcode = barcode;
+            } else {
+                products.push({ id: Date.now(), barcode, name, cost, price, qty });
+            }
+
+            saveProducts();
+            savePurchases();
+
+            document.getElementById('prod-barcode').value = '';
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-cost').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-qty').value = '';
+            document.getElementById('prod-barcode').focus();
+        }
+
+        function openEditModal(purchaseId) {
+            const purchase = purchaseHistory.find(ph => ph.id === purchaseId);
+            if(!purchase) return;
+
+            document.getElementById('edit-purchase-id').value = purchase.id;
+            document.getElementById('edit-prod-barcode').value = purchase.barcode || '';
+            document.getElementById('edit-prod-name').value = purchase.name;
+            document.getElementById('edit-prod-cost').value = purchase.cost;
+            document.getElementById('edit-prod-price').value = purchase.price;
+            document.getElementById('edit-prod-qty').value = purchase.qty;
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        function savePurchaseEdit() {
+            const purchaseId = parseInt(document.getElementById('edit-purchase-id').value);
+            const newBarcode = document.getElementById('edit-prod-barcode').value.trim();
+            const newName = document.getElementById('edit-prod-name').value.trim();
+            const newCost = parseFloat(document.getElementById('edit-prod-cost').value);
+            const newPrice = parseFloat(document.getElementById('edit-prod-price').value);
+            const newQty = parseInt(document.getElementById('edit-prod-qty').value);
+
+            if(!newName || isNaN(newCost) || isNaN(newPrice) || isNaN(newQty)) {
+                alert('يرجى إدخال جميع المعلومات بشكل صحيح');
+                return;
+            }
+
+            const purchase = purchaseHistory.find(ph => ph.id === purchaseId);
+            if(!purchase) return;
+
+            const oldName = purchase.name;
+            const oldQty = purchase.qty;
+
+            purchase.barcode = newBarcode;
+            purchase.name = newName;
+            purchase.cost = newCost;
+            purchase.price = newPrice;
+            purchase.qty = newQty;
+
+            const prod = products.find(p => p.name.trim() === oldName.trim() || (purchase.barcode && p.barcode === purchase.barcode));
+            if(prod) {
+                const qtyDifference = newQty - oldQty;
+                prod.qty += qtyDifference;
+                if(prod.qty < 0) prod.qty = 0;
+                prod.barcode = newBarcode;
+                prod.name = newName;
+                prod.cost = newCost;
+                prod.price = newPrice;
+            }
+
+            saveProducts();
+            savePurchases();
+            closeEditModal();
+        }
+
+        function deletePurchaseInvoice(purchaseId) {
+            if(!confirm('هل أنت متاكد من إلغاء وحذف فاتورة المشتريات هذه؟')) return;
+
+            const phIndex = purchaseHistory.findIndex(ph => ph.id === purchaseId);
+            if(phIndex === -1) return;
+
+            const purchase = purchaseHistory[phIndex];
+            const prod = products.find(p => p.name.trim() === purchase.name.trim() || (purchase.barcode && p.barcode === purchase.barcode));
+
+            if(prod) {
+                prod.qty -= purchase.qty;
+                if(prod.qty < 0) prod.qty = 0;
+            }
+
+            purchaseHistory.splice(phIndex, 1);
+            saveProducts();
+            savePurchases();
+        }
+
+        function addToCart(id) {
+            const prod = products.find(p => p.id === id);
+            if(!prod) return;
+
+            if(cartMode === 'sale' && prod.qty <= 0) {
+                alert('المنتج غير متوفر بالمخزن حالياً!');
+                return;
+            }
+
+            const item = cart.find(c => c.id === id);
+            if(item) {
+                if(cartMode === 'sale' && item.qty + 1 > prod.qty) {
+                    alert('وصلت للحد الأقصى المتوفر بالمخزن');
+                    return;
+                }
+                item.qty++;
+            } else {
+                cart.push({ ...prod, qty: 1 });
+            }
+
+            renderCart();
+        }
+
+        function changeQty(id, delta) {
+            const item = cart.find(c => c.id === id);
+            const prod = products.find(p => p.id === id);
+            if(!item) return;
+
+            item.qty += delta;
+
+            if(cartMode === 'sale' && item.qty > prod.qty) {
+                alert('وصلت للحد الأقصى للكمية المتاحة');
+                item.qty = prod.qty;
+            }
+
+            if(item.qty <= 0) {
+                cart = cart.filter(c => c.id !== id);
+            }
+
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            if(cart.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>';
+                document.getElementById('cart-total-price').innerText = '0 د.ع';
+                return;
+            }
+
+            container.innerHTML = '';
+            let total = 0;
+
+            cart.forEach(c => {
+                total += c.price * c.qty;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${c.name}</strong><br>
+                            <small>${c.price.toLocaleString()} د.ع</small>
+                        </div>
+                        <div class="cart-item-controls">
+                            <button class="qty-btn" onclick="changeQty(${c.id}, -1)">-</button>
+                            <span>${c.qty}</span>
+                            <button class="qty-btn" onclick="changeQty(${c.id}, 1)">+</button>
+                            <strong style="margin-right:8px;">${(c.price * c.qty).toLocaleString()} د.ع</strong>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('cart-total-price').innerText = `${total.toLocaleString()} د.ع`;
+        }
+
+        function checkout() {
+            if(cart.length === 0) {
+                alert('السلة فارغة!');
+                return;
+            }
+
+            let totalVal = 0;
+            let profitVal = 0;
+            let itemsList = [];
+
+            cart.forEach(item => {
+                const prod = products.find(p => p.id === item.id);
+                if(prod) {
+                    if(cartMode === 'sale') {
+                        prod.qty -= item.qty;
+                    } else {
+                        prod.qty += item.qty;
+                    }
+                    totalVal += item.price * item.qty;
+                    profitVal += (item.price - item.cost) * item.qty;
+                    itemsList.push(`${item.name} (${item.qty})`);
+                }
+            });
+
+            const now = new Date();
+            const invoiceNum = salesHistory.length + 1001;
+
+            salesHistory.unshift({
+                id: invoiceNum,
+                date: now.toISOString().split('T')[0],
+                time: now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }),
+                type: cartMode === 'sale' ? 'بيع' : 'مرتجع',
+                items: itemsList.join('، '),
+                total: cartMode === 'sale' ? totalVal : -totalVal,
+                profit: cartMode === 'sale' ? profitVal : -profitVal
+            });
+
+            cart = [];
+            renderCart();
+            saveProducts();
+            saveSales();
+
+            if(cartMode === 'return') setCartMode('sale');
+
+            const alertBox = document.getElementById('checkout-alert');
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 2000);
+        }
+
+        function renderReports() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('current-date').innerText = todayStr;
+
+            const todaySales = salesHistory.filter(s => s.date === todayStr);
+
+            let totalSales = 0;
+            let totalProfit = 0;
+
+            const table = document.getElementById('sales-history-table');
+            table.innerHTML = '';
+
+            if(todaySales.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد عمليات اليوم.</td></tr>';
+            }
+
+            todaySales.forEach(s => {
+                totalSales += s.total;
+                totalProfit += s.profit;
+
+                const isReturn = s.type === 'مرتجع';
+                const badgeColor = isReturn ? 'color: var(--danger); font-weight: bold;' : 'color: var(--green); font-weight: bold;';
+
+                table.innerHTML += `
+                    <tr>
+                        <td><strong>#${s.id}</strong></td>
+                        <td>${s.time}</td>
+                        <td style="${badgeColor}">${s.type || 'بيع'}</td>
+                        <td class="items-detail">${s.items}</td>
+                        <td style="${badgeColor}">${s.total.toLocaleString()} د.ع</td>
+                        <td style="${badgeColor}">${s.profit > 0 ? '+' : ''}${s.profit.toLocaleString()} د.ع</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('today-count').innerText = `${todaySales.length} عملية`;
+            document.getElementById('today-sales').innerText = `${totalSales.toLocaleString()} د.ع`;
+            document.getElementById('today-profit').innerText = `${totalProfit.toLocaleString()} د.ع`;
+        }
+
+        function mergeAndClearSales() {
+            if(confirm('هل أنت متاكد من تصفير ودمج الفواتير لهذا اليوم؟')) {
+                salesHistory = [];
+                saveSales();
+                alert('تم التصفير والدمج بنجاح!');
+            }
+        }
+
+        /* إدارة المستخدمين */
+        function renderUsers() {
+            const table = document.getElementById('users-table');
+            table.innerHTML = '';
+            users.forEach(u => {
+                table.innerHTML += `
+                    <tr>
+                        <td><strong>${u.username}</strong></td>
+                        <td><span style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-family: monospace;">${u.password}</span></td>
+                        <td>${u.role === 'admin' ? 'مدير' : 'كاشير'}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="openEditUserModal(${u.id})"><i class="fa-solid fa-pen"></i></button>
+                            ${u.username !== 'admin' ? `<button class="action-btn cancel-btn" onclick="deleteUser(${u.id})">✕</button>` : '<small style="color:#94a3b8;">أساسي</small>'}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addUser() {
+            const u = document.getElementById('new-username').value.trim();
+            const p = document.getElementById('new-password').value.trim();
+            const r = document.getElementById('new-role').value;
+
+            if(!u || !p) {
+                alert('يرجى إدخال اسم المستخدم وكلمة السر');
+                return;
+            }
+
+            if(users.some(user => user.username === u)) {
+                alert('اسم المستخدم موجود بالفعل!');
+                return;
+            }
+
+            users.push({ id: Date.now(), username: u, password: p, role: r });
+            saveUsers();
+
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+        }
+
+        function openEditUserModal(id) {
+            const u = users.find(user => user.id === id);
+            if(!u) return;
+
+            document.getElementById('edit-user-id').value = u.id;
+            document.getElementById('edit-user-username').value = u.username;
+            document.getElementById('edit-user-password').value = u.password;
+            document.getElementById('edit-user-role').value = u.role;
+
+            document.getElementById('edit-user-modal').style.display = 'flex';
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('edit-user-modal').style.display = 'none';
+        }
+
+        function saveUserEdit() {
+            const id = parseInt(document.getElementById('edit-user-id').value);
+            const u = document.getElementById('edit-user-username').value.trim();
+            const p = document.getElementById('edit-user-password').value.trim();
+            const r = document.getElementById('edit-user-role').value;
+
+            if(!u || !p) {
+                alert('يرجى ملء جميع البيانات!');
+                return;
+            }
+
+            const user = users.find(user => user.id === id);
+            if(user) {
+                user.username = u;
+                user.password = p;
+                user.role = r;
+                saveUsers();
+                closeEditUserModal();
+            }
+        }
+
+        function deleteUser(id) {
+            if(confirm('هل انت متاكد من حذف هذا المستخدم؟')) {
+                users = users.filter(u => u.id !== id);
+                saveUsers();
+            }
+        }
+
+        /* النسخ الاحتياطي والاستعادة */
+        function exportBackup() {
+            const data = {
+                products,
+                purchaseHistory,
+                salesHistory,
+                users
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `pos_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            dlAnchorElem.remove();
+        }
+
+        function importBackup(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.products && data.purchaseHistory && data.salesHistory) {
+                        products = data.products;
+                        purchaseHistory = data.purchaseHistory;
+                        salesHistory = data.salesHistory;
+                        if(data.users) users = data.users;
+
+                        saveProducts();
+                        savePurchases();
+                        saveSales();
+                        saveUsers();
+
+                        alert('تمت استعادة النسخة الاحتياطية بنجاح!');
+                    } else {
+                        alert('ملف غير صالح!');
+                    }
+                } catch(err) {
+                    alert('خطأ في قراءة ملف النسخة الاحتياطية!');
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        checkAuth();
+        renderProducts();
+        renderPurchaseHistory();
+        renderReports();
+    </script>
 </body>
 </html>
