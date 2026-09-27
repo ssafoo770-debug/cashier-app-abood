@@ -87,7 +87,6 @@
             gap: 1.5rem;
         }
 
-        /* تعديل هنا لمنع تمدد السلة مع المنتجات */
         #pos-view {
             align-items: flex-start;
         }
@@ -126,7 +125,6 @@
             transform: scale(0.97);
         }
 
-        /* شكل المنتج إذا خلص من المخزن */
         .product-card.out-of-stock {
             opacity: 0.6;
             border-color: var(--danger);
@@ -140,7 +138,6 @@
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
         .product-card .qty { color: #64748b; font-size: 0.85rem; margin-top: 0.4rem; }
 
-        /* تثبيت السلة بالشاشة */
         .cart-container {
             flex: 1;
             background: var(--card);
@@ -153,14 +150,14 @@
             min-width: 340px;
             position: sticky;
             top: 0;
-            height: calc(100vh - 3rem); /* نفس ارتفاع الشاشة بالضبط */
+            height: calc(100vh - 3rem);
         }
 
         .cart-items {
             flex: 1;
             overflow-y: auto;
             margin: 1rem 0;
-            padding-right: 5px; /* مسافة بسيطة للسكرول */
+            padding-right: 5px;
         }
 
         .cart-item {
@@ -437,8 +434,28 @@
         let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
         let cart = [];
 
-        function saveProducts() {
+        // تنظيف ودمج أي منتجات متكررة بنفس الاسم عند بداية التشغيل
+        function consolidateProducts() {
+            let consolidated = [];
+            products.forEach(p => {
+                let cleanName = p.name.trim();
+                let existing = consolidated.find(item => item.name.trim() === cleanName);
+                if(existing) {
+                    existing.qty += p.qty;
+                    existing.price = p.price; // الاعتماد على السعر الأخير
+                    existing.cost = p.cost;
+                } else {
+                    consolidated.push({ ...p, name: cleanName });
+                }
+            });
+            products = consolidated;
             localStorage.setItem('pos_products', JSON.stringify(products));
+        }
+
+        consolidateProducts();
+
+        function saveProducts() {
+            consolidateProducts();
             renderProducts();
         }
 
@@ -476,7 +493,7 @@
                 return;
             }
 
-            // عرض كل المنتجات، حتى اللي كميتها 0 راح تظل موجودة بس بشكل باهت
+            // عرض كل منتج كأيقونة واحدة فريدة تماماً
             products.forEach(p => {
                 const stockClass = p.qty <= 0 ? 'out-of-stock' : '';
                 grid.innerHTML += `
@@ -527,10 +544,12 @@
             const newPurchase = { id: Date.now(), name, cost, price, qty };
             purchaseHistory.unshift(newPurchase);
 
-            const existing = products.find(p => p.name === name && p.price === price);
+            // إضافة الكمية لنفس المنتج إذا كان موجوداً مسبقاً باسمه
+            const existing = products.find(p => p.name.trim() === name);
             if(existing) {
                 existing.qty += qty;
                 existing.cost = cost;
+                existing.price = price;
             } else {
                 products.push({ id: Date.now(), name, cost, price, qty });
             }
@@ -551,12 +570,11 @@
             if(phIndex === -1) return;
 
             const purchase = purchaseHistory[phIndex];
-            const prod = products.find(p => p.name === purchase.name && p.price === purchase.price);
+            const prod = products.find(p => p.name.trim() === purchase.name.trim());
 
             if(prod) {
                 prod.qty -= purchase.qty;
-                if(prod.qty < 0) prod.qty = 0; // حتى ما تطلع الكمية بالسالب
-                // تم حذف الكود اللي يمسح المنتج حتى يبقى ظاهر بالشاشة
+                if(prod.qty < 0) prod.qty = 0;
             }
 
             purchaseHistory.splice(phIndex, 1);
