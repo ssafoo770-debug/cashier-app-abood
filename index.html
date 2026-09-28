@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل (مع مردود المبيعات)</title>
+    <title>أسواق سيف - نظام الكاشير المتكامل (مع البحث السريع بالفاتورة)</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -215,6 +215,7 @@
             min-width: 340px;
             height: calc(100vh - 3rem);
             border: 2px solid transparent;
+            position: relative;
         }
 
         /* الثيم الأحمر عند تحويل الفاتورة لمردود مبيعات */
@@ -236,7 +237,62 @@
             border-color: #b91c1c !important;
         }
 
-        .cart-items { flex: 1; overflow-y: auto; margin: 1rem 0; }
+        /* تنسيقات حقل البحث داخل الفاتورة */
+        .cart-search-box {
+            position: relative;
+            margin-top: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cart-search-input {
+            width: 100%;
+            padding: 0.7rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .cart-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: none;
+        }
+
+        .cart-search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 0.7rem 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .search-result-item:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-items { flex: 1; overflow-y: auto; margin: 0.5rem 0; }
 
         .cart-item {
             display: flex;
@@ -406,7 +462,14 @@
                         <option value="sale">🛒 فاتورة مبيعات</option>
                         <option value="return">↩️ مردود مبيعات (ترجيع)</option>
                     </select>
+
+                    <!-- خانة البحث السريع المضافة داخل الفاتورة -->
+                    <div class="cart-search-box">
+                        <input type="text" id="cart-search-input" class="cart-search-input" placeholder="🔍 اكتب اسم المنتج لإضافته مباشر للفاتورة..." oninput="handleCartSearch(this.value)">
+                        <div id="cart-search-results" class="cart-search-results"></div>
+                    </div>
                 </div>
+
                 <div class="cart-items" id="cart-items">
                     <p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>
                 </div>
@@ -808,6 +871,15 @@
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
             }
+
+            // إغلاق النتائج عند النقر في أي مكان آخر
+            document.addEventListener('click', function(e) {
+                const searchBox = document.querySelector('.cart-search-box');
+                if (searchBox && !searchBox.contains(e.target)) {
+                    const results = document.getElementById('cart-search-results');
+                    if (results) results.classList.remove('active');
+                }
+            });
         };
 
         function handleLogin(e) {
@@ -875,6 +947,48 @@
             renderPurchasesLogTable();
             renderReports();
             renderUsersTable();
+        }
+
+        // --- البحث داخل الفاتورة إضافة فورية ---
+        function handleCartSearch(query) {
+            const resultsContainer = document.getElementById('cart-search-results');
+            query = query.trim().toLowerCase();
+
+            if (!query) {
+                resultsContainer.classList.remove('active');
+                resultsContainer.innerHTML = '';
+                return;
+            }
+
+            const matches = products.filter(p => p.name.toLowerCase().includes(query) || (p.barcode && p.barcode.includes(query)));
+
+            if (matches.length === 0) {
+                resultsContainer.innerHTML = `<div class="search-result-item" style="color:#94a3b8; justify-content:center;">لا توجد نتائج مطابقة</div>`;
+                resultsContainer.classList.add('active');
+                return;
+            }
+
+            resultsContainer.innerHTML = '';
+            matches.forEach(prod => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${prod.name}</strong>
+                        <small style="display:block; opacity:0.7;">متوفر: ${prod.qty}</small>
+                    </div>
+                    <span style="color:var(--green); font-weight:bold;">${prod.price} د.ع</span>
+                `;
+                div.onclick = () => {
+                    addToCart(prod.id);
+                    document.getElementById('cart-search-input').value = '';
+                    resultsContainer.classList.remove('active');
+                    resultsContainer.innerHTML = '';
+                };
+                resultsContainer.appendChild(div);
+            });
+
+            resultsContainer.classList.add('active');
         }
 
         // --- 1. نقطة البيع (POS) وتغيير اللون ---
@@ -1012,7 +1126,6 @@
             let totalCost = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
             let invoiceProfit = total - totalCost;
 
-            // إذا كانت العملية مردود مبيعات (نطرح المبيعات والأرباح ونرجع البضاعة للمحل)
             if (invType === 'return') {
                 total = -total;
                 invoiceProfit = -invoiceProfit;
@@ -1020,14 +1133,14 @@
                 cart.forEach(cartItem => {
                     let prod = products.find(p => p.id === cartItem.id);
                     if (prod) {
-                        prod.qty += cartItem.qty; // إضافة البضاعة المرجعة للمخزن
+                        prod.qty += cartItem.qty;
                     }
                 });
             } else {
                 cart.forEach(cartItem => {
                     let prod = products.find(p => p.id === cartItem.id);
                     if (prod) {
-                        prod.qty -= cartItem.qty; // خصم البضاعة المباعة
+                        prod.qty -= cartItem.qty;
                     }
                 });
             }
@@ -1041,7 +1154,7 @@
 
             salesHistory.push({
                 invoiceNo: invoiceCounter++,
-                type: invType, // sale OR return
+                type: invType,
                 date: dateString,
                 time: `${dateString} ${timeString}`,
                 items: [...cart],
