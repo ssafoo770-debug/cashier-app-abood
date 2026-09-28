@@ -398,7 +398,6 @@
         input:checked + .slider-switch { background-color: var(--accent); }
         input:checked + .slider-switch:before { transform: translateX(26px); }
 
-        /* نافذة المودال لكشف حساب الزبون */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -669,6 +668,7 @@
                             <th>التاريخ والوقت</th>
                             <th>اسم الزبون</th>
                             <th>المبلغ المسدد</th>
+                            <th>الربح المرحل لأرباح اليوم</th>
                             <th>المتبقي ذمته بعد التسديد</th>
                         </tr>
                     </thead>
@@ -828,21 +828,21 @@
                 <div class="stat-card blue">
                     <div class="icon-box">📄</div>
                     <div class="stat-info">
-                        <h4>عدد الفواتير اليوم</h4>
+                        <h4>عدد الفواتير والحركات اليوم</h4>
                         <div id="stat-invoices-count">0</div>
                     </div>
                 </div>
                 <div class="stat-card green">
                     <div class="icon-box">💰</div>
                     <div class="stat-info">
-                        <h4>إجمالي مبيعات اليوم (النقدية)</h4>
+                        <h4>إجمالي المقبوضات النقدية اليوم</h4>
                         <div id="stat-total-sales">0 د.ع</div>
                     </div>
                 </div>
                 <div class="stat-card purple">
                     <div class="icon-box">📊</div>
                     <div class="stat-info">
-                        <h4>صافي أرباح اليوم</h4>
+                        <h4>صافي أرباح اليوم المحققة فعلياً</h4>
                         <div id="stat-total-profit">0 د.ع</div>
                     </div>
                 </div>
@@ -850,7 +850,7 @@
 
             <div class="content-box">
                 <div class="flex-between">
-                    <h2>📑 سجل الفواتير المباعة اليوم</h2>
+                    <h2>📑 سجل الحركات والمبيعات المحصلة اليوم</h2>
                     <button class="btn btn-danger" onclick="resetDailyAccount()">
                         🔄 تصفير الحساب اليومي (إنهاء اليوم وحفظه بالأرشيف)
                     </button>
@@ -858,13 +858,13 @@
                 <table class="custom-table">
                     <thead>
                         <tr>
-                            <th>رقم الفاتورة</th>
+                            <th>رقم الحركة/الفاتورة</th>
                             <th>الوقت والتاريخ</th>
-                            <th>نوع الفاتورة</th>
+                            <th>نوع الحركة</th>
                             <th>الزبون / التفاصيل</th>
                             <th>الخصم</th>
-                            <th>المبلغ الإجمالي</th>
-                            <th>الربح</th>
+                            <th>المبلغ النظري / المسدد</th>
+                            <th>الربح الفعلي المحصل</th>
                         </tr>
                     </thead>
                     <tbody id="sales-history-body"></tbody>
@@ -892,15 +892,15 @@
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; background: var(--table-header); padding: 1rem; border-radius: 8px;">
                     <div>
-                        <span style="font-size: 0.85rem; color: #94a3b8;">إجمالي مبيعات الفترة:</span>
+                        <span style="font-size: 0.85rem; color: #94a3b8;">إجمالي مقبوضات الفترة:</span>
                         <div id="custom-report-sales" style="font-size: 1.2rem; font-weight: bold; color: var(--green);">0 د.ع</div>
                     </div>
                     <div>
-                        <span style="font-size: 0.85rem; color: #94a3b8;">صافي أرباح الفترة:</span>
+                        <span style="font-size: 0.85rem; color: #94a3b8;">صافي أرباح الفترة الفعلية:</span>
                         <div id="custom-report-profit" style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">0 د.ع</div>
                     </div>
                     <div>
-                        <span style="font-size: 0.85rem; color: #94a3b8;">عدد الفواتير بالفترة:</span>
+                        <span style="font-size: 0.85rem; color: #94a3b8;">عدد الحركات بالفترة:</span>
                         <div id="custom-report-count" style="font-size: 1.2rem; font-weight: bold;">0</div>
                     </div>
                 </div>
@@ -908,12 +908,12 @@
                 <table class="custom-table" style="margin-top: 1rem;">
                     <thead>
                         <tr>
-                            <th>رقم الفاتورة</th>
+                            <th>رقم الحركة/الفاتورة</th>
                             <th>التاريخ والوقت</th>
-                            <th>نوع الفاتورة</th>
-                            <th>المواد المباعة</th>
-                            <th>المبلغ الإجمالي</th>
-                            <th>الربح</th>
+                            <th>نوع الحركة</th>
+                            <th>المواد / التفاصيل</th>
+                            <th>المبلغ</th>
+                            <th>الربح المحقق</th>
                         </tr>
                     </thead>
                     <tbody id="custom-report-table-body">
@@ -1210,7 +1210,6 @@
             }
         }
 
-        // عند كتابة اسم الزبون والضغط على Enter بالنقطة
         function handleCustomerInputKey(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1345,7 +1344,7 @@
             if (total < 0) total = 0;
 
             let totalCost = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
-            let invoiceProfit = total - totalCost;
+            let calculatedProfit = total - totalCost;
 
             let now = new Date();
             let year = now.getFullYear();
@@ -1355,15 +1354,22 @@
             let timeString = now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
             let fullDateStr = `${dateString} ${timeString}`;
 
+            let recordTotal = total;
+            let recordProfit = calculatedProfit;
+
             if (invType === 'return') {
-                total = -total;
-                invoiceProfit = -invoiceProfit;
+                recordTotal = -total;
+                recordProfit = -calculatedProfit;
 
                 cart.forEach(cartItem => {
                     let prod = products.find(p => p.id === cartItem.id);
                     if (prod) prod.qty += cartItem.qty;
                 });
             } else if (invType === 'debt') {
+                // المبيعات الآجلة لا تحسب أرباحها أو مبيعاتها النقدية فوراً حتى تُسدد
+                recordTotal = 0; 
+                recordProfit = 0; 
+
                 cart.forEach(cartItem => {
                     let prod = products.find(p => p.id === cartItem.id);
                     if (prod) prod.qty -= cartItem.qty;
@@ -1397,8 +1403,12 @@
                 time: fullDateStr,
                 items: [...cart],
                 discount: discount,
-                total: total,
-                profit: invoiceProfit
+                originalTotal: total,           // المبلغ الأصلي للفاتورة
+                originalProfit: calculatedProfit,// الربح المعلق الكامل
+                paidAmount: invType === 'debt' ? 0 : total, // المسدد
+                paidProfit: invType === 'debt' ? 0 : calculatedProfit, // الربح المحقق
+                total: recordTotal,
+                profit: recordProfit
             });
 
             cart = [];
@@ -1408,11 +1418,10 @@
             refreshAllViews();
 
             if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!');
-            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح!`);
+            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، ولن تُضاف الأرباح حتى يتم التسديد!`);
             else alert('تم إتمام عملية البيع بنجاح!');
         }
 
-        // إضافة زبون جديد من واجهة الديون
         function handleAddCustomer(e) {
             e.preventDefault();
             const name = document.getElementById('new-cust-name').value.trim();
@@ -1440,7 +1449,6 @@
             refreshAllViews();
         }
 
-        // إدارات وسجل الديون
         function renderDebts() {
             const tbody = document.getElementById('debts-table-body');
             const totalDebtsVal = document.getElementById('stat-total-debts');
@@ -1469,11 +1477,10 @@
                 });
             }
 
-            // أرشيف التسديدات
             const paymentsBody = document.getElementById('debt-payments-history-body');
             if (!paymentsBody) return;
             if (debtPayments.length === 0) {
-                paymentsBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">لا توجد حركات تسديد سابقة</td></tr>`;
+                paymentsBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد حركات تسديد سابقة</td></tr>`;
             } else {
                 paymentsBody.innerHTML = '';
                 debtPayments.slice().reverse().forEach(p => {
@@ -1482,6 +1489,7 @@
                         <td>${p.time}</td>
                         <td><strong>${p.customer}</strong></td>
                         <td style="color:var(--green); font-weight:bold;">${p.paidAmount} د.ع</td>
+                        <td style="color:var(--accent); font-weight:bold;">+${p.realizedProfit || 0} د.ع</td>
                         <td>${p.remainingAmount} د.ع</td>
                     `;
                     paymentsBody.appendChild(tr);
@@ -1489,7 +1497,6 @@
             }
         }
 
-        // كشف حساب تفصيلي للزبون
         function openCustomerStatement(custName) {
             const customerObj = debts.find(d => d.customer === custName);
             const modal = document.getElementById('customer-statement-modal');
@@ -1502,12 +1509,10 @@
             modalPhone.innerText = `📱 رقم الهاتف: ${customerObj ? (customerObj.phone || 'غير محدد') : 'غير محدد'}`;
             modalTotal.innerText = `${customerObj ? customerObj.amount : 0} د.ع`;
 
-            // جلب حركات الدين والمشتريات الخاصة بالزبون
             let allSalesCombined = getAllSalesCombined();
             let custInvoices = allSalesCombined.filter(inv => inv.type === 'debt' && inv.customer.toLowerCase() === custName.toLowerCase());
             let custPays = debtPayments.filter(p => p.customer.toLowerCase() === custName.toLowerCase());
 
-            // تجميع كل الحركات بترتيب زمني
             let activities = [];
 
             custInvoices.forEach(inv => {
@@ -1516,7 +1521,7 @@
                     time: inv.time,
                     type: 'دين (شراء آجل)',
                     details: itemsList,
-                    amount: inv.total,
+                    amount: inv.originalTotal || inv.total,
                     isDebt: true
                 });
             });
@@ -1525,13 +1530,12 @@
                 activities.push({
                     time: p.time,
                     type: 'تسديد نقد',
-                    details: 'دفعة مسددة من الدين',
+                    details: `دفعة مسددة من الدين (ربحها: ${p.realizedProfit || 0} د.ع)`,
                     amount: p.paidAmount,
                     isDebt: false
                 });
             });
 
-            // ترتيب زمني تصاعدي حسب الوقت
             activities.sort((a, b) => new Date(a.time) - new Date(b.time));
 
             modalBody.innerHTML = '';
@@ -1580,20 +1584,64 @@
             debtObj.amount -= payAmount;
             
             let now = new Date();
-            let dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+            let year = now.getFullYear();
+            let month = String(now.getMonth() + 1).padStart(2, '0');
+            let day = String(now.getDate()).padStart(2, '0');
+            let dateStrShort = `${year}-${month}-${day}`;
+            let dateStr = `${dateStrShort} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+
+            // حساب الربح المحقق نسبياً من الفواتير الآجلة غير المسددة للزبون
+            let remainingToDistribute = payAmount;
+            let totalRealizedProfit = 0;
+
+            let allCustomerDebts = salesHistory.filter(inv => inv.type === 'debt' && inv.customer.toLowerCase() === debtObj.customer.toLowerCase() && (inv.paidAmount < inv.originalTotal));
+
+            for (let inv of allCustomerDebts) {
+                if (remainingToDistribute <= 0) break;
+
+                let unpaidOnInvoice = inv.originalTotal - inv.paidAmount;
+                let paymentForThisInvoice = Math.min(remainingToDistribute, unpaidOnInvoice);
+
+                // حساب النسبة المسددة من هذه الفاتورة
+                let profitRatio = inv.originalTotal > 0 ? (inv.originalProfit / inv.originalTotal) : 0;
+                let profitFromThisPayment = paymentForThisInvoice * profitRatio;
+
+                inv.paidAmount += paymentForThisInvoice;
+                inv.paidProfit += profitFromThisPayment;
+
+                totalRealizedProfit += profitFromThisPayment;
+                remainingToDistribute -= paymentForThisInvoice;
+            }
+
+            // تدوير الأرقام للأمان المحاسبي
+            totalRealizedProfit = Math.round(totalRealizedProfit);
 
             debtPayments.push({
                 customer: debtObj.customer,
                 paidAmount: payAmount,
+                realizedProfit: totalRealizedProfit,
                 remainingAmount: debtObj.amount,
                 time: dateStr
+            });
+
+            // تسجيل حركة التسديد المباشرة بجدول المبيعات كحركة مقبوضات وأرباح فعلياً باليوم الحاضر
+            salesHistory.push({
+                invoiceNo: invoiceCounter++,
+                type: 'debt_payment',
+                customer: debtObj.customer,
+                date: dateStrShort,
+                time: dateStr,
+                items: [],
+                discount: 0,
+                total: payAmount,
+                profit: totalRealizedProfit
             });
 
             debtObj.lastUpdate = dateStr;
 
             saveData();
             refreshAllViews();
-            alert('تم تسديد المبلغ وتحديث سجل الدين بنجاح!');
+            alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!\nتم تحويل ربح قدره (${totalRealizedProfit} د.ع) إلى أرباح اليوم الفعلي.`);
         }
 
         function handleAddWarehouseItem(e) {
@@ -1863,8 +1911,8 @@
 
             countElem.innerText = todaySales.length;
             
-            // حساب الكاش فقط المقبوض اليوم (بدون الفواتير الآجلة)
-            let sumSales = todaySales.filter(inv => inv.type !== 'debt').reduce((acc, inv) => acc + inv.total, 0);
+            // المقبوضات النقود الفعلية المقبوضة بالأيدي (بيع نقد + تسديد ديون)
+            let sumSales = todaySales.reduce((acc, inv) => acc + inv.total, 0);
             let sumProfit = todaySales.reduce((acc, inv) => acc + inv.profit, 0);
 
             totalSalesElem.innerText = sumSales + ' د.ع';
@@ -1878,12 +1926,16 @@
                     let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '';
                     let isReturn = inv.type === 'return';
                     let isDebt = inv.type === 'debt';
+                    let isPay = inv.type === 'debt_payment';
                     
                     let typeBadge = '<span style="color:#16a34a; font-weight:bold;">🛒 بيع نقد</span>';
                     if (isReturn) typeBadge = '<span style="color:#ef4444; font-weight:bold;">↩️ مردود</span>';
-                    if (isDebt) typeBadge = '<span style="color:#d97706; font-weight:bold;">📖 آجل (دين)</span>';
+                    if (isDebt) typeBadge = '<span style="color:#d97706; font-weight:bold;">📖 آجل (معلق)</span>';
+                    if (isPay) typeBadge = '<span style="color:#2563eb; font-weight:bold;">💰 تسديد دين</span>';
                     
-                    let customerDetails = isDebt ? `<strong>الزبون: ${inv.customer}</strong><br><small>${itemsDesc}</small>` : itemsDesc;
+                    let customerDetails = itemsDesc;
+                    if (isDebt) customerDetails = `<strong>الزبون: ${inv.customer}</strong><br><small>فاتورة معلقة (${inv.originalTotal} د.ع)</small>`;
+                    if (isPay) customerDetails = `<strong>تسديد دين من: ${inv.customer}</strong>`;
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -1891,7 +1943,7 @@
                         <td>${inv.time}</td>
                         <td>${typeBadge}</td>
                         <td>${customerDetails}</td>
-                        <td>${inv.discount} د.ع</td>
+                        <td>${inv.discount || 0} د.ع</td>
                         <td style="${isReturn ? 'color:#ef4444; font-weight:bold;' : ''}">${inv.total} د.ع</td>
                         <td style="color: ${isReturn ? '#ef4444' : 'var(--green)'}; font-weight: bold;">${inv.profit} د.ع</td>
                     `;
@@ -1946,12 +1998,16 @@
                 let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '-';
                 let isReturn = inv.type === 'return';
                 let isDebt = inv.type === 'debt';
+                let isPay = inv.type === 'debt_payment';
 
                 let typeBadge = '<span style="color:#16a34a; font-weight:bold;">🛒 بيع</span>';
                 if (isReturn) typeBadge = '<span style="color:#ef4444; font-weight:bold;">↩️ مردود</span>';
-                if (isDebt) typeBadge = '<span style="color:#d97706; font-weight:bold;">📖 دين</span>';
+                if (isDebt) typeBadge = '<span style="color:#d97706; font-weight:bold;">📖 دين معلق</span>';
+                if (isPay) typeBadge = '<span style="color:#2563eb; font-weight:bold;">💰 تسديد دين</span>';
 
-                let customerDetails = isDebt ? `<strong>الزبون: ${inv.customer}</strong> (${itemsDesc})` : itemsDesc;
+                let customerDetails = itemsDesc;
+                if (isDebt) customerDetails = `<strong>الزبون: ${inv.customer}</strong> (آجل)`;
+                if (isPay) customerDetails = `<strong>استلام دين من الزبون: ${inv.customer}</strong>`;
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
