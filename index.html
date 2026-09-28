@@ -630,11 +630,11 @@
                 <div class="form-grid" style="align-items: flex-end;">
                     <div class="form-group">
                         <label for="report-start-date">من تاريخ:</label>
-                        <input type="date" id="report-start-date" onchange="filterCustomReport()">
+                        <input type="text" id="report-start-date" placeholder="يوم / شهر / سنة" maxlength="10" onkeyup="formatDateInput(this)" oninput="filterCustomReport()">
                     </div>
                     <div class="form-group">
                         <label for="report-end-date">إلى تاريخ:</label>
-                        <input type="date" id="report-end-date" onchange="filterCustomReport()">
+                        <input type="text" id="report-end-date" placeholder="يوم / شهر / سنة" maxlength="10" onkeyup="formatDateInput(this)" oninput="filterCustomReport()">
                     </div>
                     <div>
                         <button class="btn" style="width: 100%; height: 44px;" onclick="resetCustomReportDates()">إلغاء التصفية</button>
@@ -1223,6 +1223,28 @@
         }
 
         // --- 5. التقارير ---
+        function formatDateInput(input) {
+            let val = input.value.replace(/\D/g, '');
+            if (val.length >= 2 && val.length < 4) {
+                input.value = val.slice(0, 2) + '/' + val.slice(2);
+            } else if (val.length >= 4) {
+                input.value = val.slice(0, 2) + '/' + val.slice(2, 4) + '/' + val.slice(4, 8);
+            } else {
+                input.value = val;
+            }
+        }
+
+        function parseInputDate(dateStr) {
+            if (!dateStr || dateStr.length !== 10) return null;
+            let parts = dateStr.split('/');
+            if (parts.length !== 3) return null;
+            let day = parts[0].padStart(2, '0');
+            let month = parts[1].padStart(2, '0');
+            let year = parts[2];
+            if (year.length !== 4) return null;
+            return `${year}-${month}-${day}`;
+        }
+
         function renderReports() {
             const countElem = document.getElementById('stat-invoices-count');
             const totalSalesElem = document.getElementById('stat-total-sales');
@@ -1272,8 +1294,12 @@
         }
 
         function filterCustomReport() {
-            const startDate = document.getElementById('report-start-date').value;
-            const endDate = document.getElementById('report-end-date').value;
+            const startRaw = document.getElementById('report-start-date').value;
+            const endRaw = document.getElementById('report-end-date').value;
+            
+            const startDate = parseInputDate(startRaw);
+            const endDate = parseInputDate(endRaw);
+
             const tableBody = document.getElementById('custom-report-table-body');
             const salesElem = document.getElementById('custom-report-sales');
             const profitElem = document.getElementById('custom-report-profit');
@@ -1283,7 +1309,7 @@
                 salesElem.innerText = '0 د.ع';
                 profitElem.innerText = '0 د.ع';
                 countElem.innerText = '0';
-                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">الرجاء تحديد تاريخ البداية والنهاية لعرض التقرير</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">الرجاء كتابة تاريخ البداية والنهاية بالشكل الصحيح (يوم / شهر / سنة)</td></tr>`;
                 return;
             }
 
