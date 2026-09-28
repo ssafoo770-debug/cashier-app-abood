@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل (تحديث الأرشيف الشهري)</title>
+    <title>أسواق سيف - نظام الكاشير المتكامل (مع مردود المبيعات)</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -38,7 +38,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            transition: background-color 0.2s, color 0.2s;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
 
         body {
@@ -201,6 +201,7 @@
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
         .product-card .qty { color: #94a3b8; font-size: 0.85rem; margin-top: 0.4rem; }
 
+        /* حاوية الفاتورة والتصميم عند التحويل لمردود المبيعات */
         .cart-container {
             flex: 1;
             background: var(--card);
@@ -213,6 +214,26 @@
             justify-content: space-between;
             min-width: 340px;
             height: calc(100vh - 3rem);
+            border: 2px solid transparent;
+        }
+
+        /* الثيم الأحمر عند تحويل الفاتورة لمردود مبيعات */
+        .cart-container.return-mode {
+            background: #fff1f2 !important;
+            border: 2px solid #ef4444 !important;
+            color: #991b1b !important;
+        }
+
+        body.dark-mode .cart-container.return-mode {
+            background: #2c0b0e !important;
+            border: 2px solid #ef4444 !important;
+            color: #fca5a5 !important;
+        }
+
+        .cart-container.return-mode select {
+            background: #dc2626 !important;
+            color: white !important;
+            border-color: #b91c1c !important;
         }
 
         .cart-items { flex: 1; overflow-y: auto; margin: 1rem 0; }
@@ -230,6 +251,8 @@
         .cart-summary { border-top: 2px dashed var(--border); padding-top: 0.8rem; }
         .cart-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 1rem; }
         .cart-row.total { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-top: 0.5rem; margin-bottom: 1rem; }
+        .cart-container.return-mode .cart-row.total { color: #dc2626 !important; }
+        
         .discount-input-group input { width: 90px; padding: 0.4rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; font-weight: bold; text-align: center; }
 
         .btn {
@@ -376,8 +399,14 @@
                 <div class="products-grid" id="pos-products-grid"></div>
             </div>
 
-            <div class="cart-container">
-                <div><h3>الفاتورة الحالية (مبيعات)</h3></div>
+            <div class="cart-container" id="main-cart-card">
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.3rem; display: block;">نوع الفاتورة الحالية:</label>
+                    <select id="invoice-type" onchange="toggleInvoiceType()" style="width: 100%; padding: 0.6rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text);">
+                        <option value="sale">🛒 فاتورة مبيعات</option>
+                        <option value="return">↩️ مردود مبيعات (ترجيع)</option>
+                    </select>
+                </div>
                 <div class="cart-items" id="cart-items">
                     <p style="color: #94a3b8; text-align: center; margin-top: 2rem;">السلة فارغة</p>
                 </div>
@@ -396,7 +425,7 @@
                         <span>الصافي:</span>
                         <span id="cart-total-price">0 د.ع</span>
                     </div>
-                    <button class="btn btn-green" style="width: 100%; font-size: 1.1rem; padding: 1rem;" onclick="checkout()">إتمام عملية البيع</button>
+                    <button class="btn btn-green" id="checkout-btn" style="width: 100%; font-size: 1.1rem; padding: 1rem;" onclick="checkout()">إتمام عملية البيع</button>
                 </div>
             </div>
         </div>
@@ -584,6 +613,7 @@
                         <tr>
                             <th>رقم الفاتورة</th>
                             <th>الوقت والتاريخ</th>
+                            <th>نوع الفاتورة</th>
                             <th>تفاصيل المواد</th>
                             <th>الخصم</th>
                             <th>المبلغ الإجمالي</th>
@@ -634,13 +664,14 @@
                         <tr>
                             <th>رقم الفاتورة</th>
                             <th>التاريخ والوقت</th>
+                            <th>نوع الفاتورة</th>
                             <th>المواد المباعة</th>
                             <th>المبلغ الإجمالي</th>
                             <th>الربح</th>
                         </tr>
                     </thead>
                     <tbody id="custom-report-table-body">
-                        <tr><td colspan="5" style="text-align:center; color:#94a3b8;">الرجاء تحديد الفترة لعرض التفاصيل</td></tr>
+                        <tr><td colspan="6" style="text-align:center; color:#94a3b8;">الرجاء تحديد الفترة لعرض التفاصيل</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -846,7 +877,23 @@
             renderUsersTable();
         }
 
-        // --- 1. نقطة البيع (POS) ---
+        // --- 1. نقطة البيع (POS) وتغيير اللون ---
+        function toggleInvoiceType() {
+            const type = document.getElementById('invoice-type').value;
+            const cartContainer = document.getElementById('main-cart-card');
+            const btn = document.getElementById('checkout-btn');
+
+            if (type === 'return') {
+                cartContainer.classList.add('return-mode');
+                btn.className = 'btn btn-danger';
+                btn.innerText = '↩️ إتمام إرجاع المشتريات';
+            } else {
+                cartContainer.classList.remove('return-mode');
+                btn.className = 'btn btn-green';
+                btn.innerText = 'إتمام عملية البيع';
+            }
+        }
+
         function renderPosProducts() {
             const grid = document.getElementById('pos-products-grid');
             if (!grid) return;
@@ -866,17 +913,22 @@
 
         function addToCart(productId) {
             const prod = products.find(p => p.id === productId);
-            if (!prod || prod.qty <= 0) {
+            const invType = document.getElementById('invoice-type').value;
+
+            if (!prod) return;
+            
+            if (invType === 'sale' && prod.qty <= 0) {
                 alert('المنتج نفد من المحل أو غير متوفر!');
                 return;
             }
+
             const existing = cart.find(item => item.id === productId);
             if (existing) {
-                if (existing.qty < prod.qty) {
-                    existing.qty++;
-                } else {
+                if (invType === 'sale' && existing.qty >= prod.qty) {
                     alert('لا توجد كمية إضافية متوفرة في المحل!');
+                    return;
                 }
+                existing.qty++;
             } else {
                 cart.push({ id: prod.id, name: prod.name, price: prod.price, cost: prod.cost, qty: 1 });
             }
@@ -887,13 +939,14 @@
             const item = cart.find(i => i.id === productId);
             if (!item) return;
             const prod = products.find(p => p.id === productId);
+            const invType = document.getElementById('invoice-type').value;
 
             const newQty = item.qty + delta;
             if (newQty > 0) {
-                if (newQty <= prod.qty) {
-                    item.qty = newQty;
-                } else {
+                if (invType === 'sale' && newQty > prod.qty) {
                     alert('الكمية المطلوبة تتجاوز المتوفر بالمحل!');
+                } else {
+                    item.qty = newQty;
                 }
             } else {
                 cart = cart.filter(i => i.id !== productId);
@@ -918,7 +971,7 @@
                 row.innerHTML = `
                     <div>
                         <strong>${item.name}</strong><br>
-                        <small style="color: #94a3b8;">${item.price} د.ع × ${item.qty}</small>
+                        <small style="opacity: 0.8;">${item.price} د.ع × ${item.qty}</small>
                     </div>
                     <div class="cart-item-controls">
                         <button class="qty-btn" onclick="changeCartQty(${item.id}, -1)">-</button>
@@ -945,10 +998,11 @@
 
         function checkout() {
             if (cart.length === 0) {
-                alert('السلة فارغة، لا يمكن إتمام البيع!');
+                alert('السلة فارغة، لا يمكن إتمام العملية!');
                 return;
             }
 
+            const invType = document.getElementById('invoice-type').value;
             let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             let discountInput = document.getElementById('cart-discount');
             let discount = discountInput && currentUser && currentUser.role === 'admin' ? parseFloat(discountInput.value) || 0 : 0;
@@ -958,12 +1012,25 @@
             let totalCost = cart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
             let invoiceProfit = total - totalCost;
 
-            cart.forEach(cartItem => {
-                let prod = products.find(p => p.id === cartItem.id);
-                if (prod) {
-                    prod.qty -= cartItem.qty;
-                }
-            });
+            // إذا كانت العملية مردود مبيعات (نطرح المبيعات والأرباح ونرجع البضاعة للمحل)
+            if (invType === 'return') {
+                total = -total;
+                invoiceProfit = -invoiceProfit;
+
+                cart.forEach(cartItem => {
+                    let prod = products.find(p => p.id === cartItem.id);
+                    if (prod) {
+                        prod.qty += cartItem.qty; // إضافة البضاعة المرجعة للمخزن
+                    }
+                });
+            } else {
+                cart.forEach(cartItem => {
+                    let prod = products.find(p => p.id === cartItem.id);
+                    if (prod) {
+                        prod.qty -= cartItem.qty; // خصم البضاعة المباعة
+                    }
+                });
+            }
 
             let now = new Date();
             let year = now.getFullYear();
@@ -974,6 +1041,7 @@
 
             salesHistory.push({
                 invoiceNo: invoiceCounter++,
+                type: invType, // sale OR return
                 date: dateString,
                 time: `${dateString} ${timeString}`,
                 items: [...cart],
@@ -986,7 +1054,7 @@
             if (discountInput) discountInput.value = '0';
             saveData();
             refreshAllViews();
-            alert('تم إتمام عملية البيع بنجاح!');
+            alert(invType === 'return' ? 'تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!' : 'تم إتمام عملية البيع بنجاح!');
         }
 
         // --- 2. المخزن ---
@@ -1221,20 +1289,12 @@
             return `${year}-${month}-${day}`;
         }
 
-        function formatDateToUI(yyyy_mm_dd) {
-            if(!yyyy_mm_dd) return '';
-            let p = yyyy_mm_dd.split('-');
-            if(p.length !== 3) return yyyy_mm_dd;
-            return `${p[2]}/${p[1]}/${p[0]}`;
-        }
-
         function setCurrentMonthRange() {
             let now = new Date();
             let y = now.getFullYear();
             let m = String(now.getMonth() + 1).padStart(2, '0');
             
             let firstDayStr = `01/${m}/${y}`;
-            
             let lastDayNum = new Date(y, now.getMonth() + 1, 0).getDate();
             let lastDayStr = `${String(lastDayNum).padStart(2, '0')}/${m}/${y}`;
 
@@ -1274,19 +1334,23 @@
             totalProfitElem.innerText = sumProfit + ' د.ع';
 
             if (todaySales.length === 0) {
-                historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير نشطة في جدول اليوم الحالي</td></tr>`;
+                historyBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لا توجد فواتير نشطة في جدول اليوم الحالي</td></tr>`;
             } else {
                 historyBody.innerHTML = '';
                 todaySales.slice().reverse().forEach(inv => {
                     let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '';
+                    let isReturn = inv.type === 'return';
+                    let typeBadge = isReturn ? '<span style="color:#ef4444; font-weight:bold;">↩️ مردود</span>' : '<span style="color:#16a34a; font-weight:bold;">🛒 بيع</span>';
+                    
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>#${inv.invoiceNo}</td>
                         <td>${inv.time}</td>
+                        <td>${typeBadge}</td>
                         <td>${itemsDesc}</td>
                         <td>${inv.discount} د.ع</td>
-                        <td><strong>${inv.total} د.ع</strong></td>
-                        <td style="color: var(--green); font-weight: bold;">${inv.profit} د.ع</td>
+                        <td style="${isReturn ? 'color:#ef4444; font-weight:bold;' : ''}">${inv.total} د.ع</td>
+                        <td style="color: ${isReturn ? '#ef4444' : 'var(--green)'}; font-weight: bold;">${inv.profit} د.ع</td>
                     `;
                     historyBody.appendChild(tr);
                 });
@@ -1311,7 +1375,7 @@
                 salesElem.innerText = '0 د.ع';
                 profitElem.innerText = '0 د.ع';
                 countElem.innerText = '0';
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">أدخل تاريخ البداية والنهاية (يوم / شهر / سنة) أو انقر على "مبيعات هذا الشهر"</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">أدخل تاريخ البداية والنهاية (يوم / شهر / سنة) أو انقر على "مبيعات هذا الشهر"</td></tr>`;
                 return;
             }
 
@@ -1330,20 +1394,24 @@
             countElem.innerText = filtered.length;
 
             if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد فواتير مسجلة في هذه الفترة المحددة</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مسجلة في هذه الفترة المحددة</td></tr>`;
                 return;
             }
 
             tableBody.innerHTML = '';
             filtered.slice().reverse().forEach(inv => {
                 let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '-';
+                let isReturn = inv.type === 'return';
+                let typeBadge = isReturn ? '<span style="color:#ef4444; font-weight:bold;">↩️ مردود</span>' : '<span style="color:#16a34a; font-weight:bold;">🛒 بيع</span>';
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>#${inv.invoiceNo}</td>
                     <td>${inv.time}</td>
+                    <td>${typeBadge}</td>
                     <td>${itemsDesc}</td>
-                    <td><strong>${inv.total} د.ع</strong></td>
-                    <td style="color: var(--green); font-weight: bold;">${inv.profit} د.ع</td>
+                    <td style="${isReturn ? 'color:#ef4444; font-weight:bold;' : ''}"><strong>${inv.total} د.ع</strong></td>
+                    <td style="color: ${isReturn ? '#ef4444' : 'var(--green)'}; font-weight: bold;">${inv.profit} د.ع</td>
                 `;
                 tableBody.appendChild(tr);
             });
