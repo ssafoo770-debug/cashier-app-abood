@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل (بدون إنترنت)</title>
+    <title>أسواق سيف - نظام الكاشير المتكامل (تحديث الأرشيف الشهري)</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -159,26 +159,9 @@
             overflow: hidden;
         }
 
-        .developer-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .developer-info span.icon {
-            min-width: 35px;
-            text-align: center;
-            font-size: 1.2rem;
-            color: #38bdf8;
-        }
-
-        .dev-details {
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
+        .developer-info { display: flex; align-items: center; gap: 15px; }
+        .developer-info span.icon { min-width: 35px; text-align: center; font-size: 1.2rem; color: #38bdf8; }
+        .dev-details { display: flex; flex-direction: column; opacity: 0; transition: opacity 0.3s ease; }
         .sidebar:hover .dev-details { opacity: 1; }
         .dev-name { font-weight: bold; color: #f1f5f9; }
         .dev-phone { color: #38bdf8; font-size: 0.75rem; direction: ltr; text-align: right; }
@@ -297,21 +280,10 @@
         .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--text); }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
 
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 60px;
-          height: 34px;
-        }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-switch {
-          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-          background-color: #ccc; transition: .4s; border-radius: 34px;
-        }
-        .slider-switch:before {
-          position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
-          background-color: white; transition: .4s; border-radius: 50%;
-        }
+        .slider-switch { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider-switch:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider-switch { background-color: var(--accent); }
         input:checked + .slider-switch:before { transform: translateX(26px); }
     </style>
@@ -370,7 +342,7 @@
 
         <button class="menu-btn admin-only" id="btn-reports" onclick="switchTab('reports')">
             <span class="icon">📈</span>
-            <span>مبيعات وأرباح اليوم</span>
+            <span>مبيعات وأرباح اليوم والتقارير</span>
         </button>
 
         <button class="menu-btn admin-only" id="btn-settings" onclick="switchTab('settings')">
@@ -604,7 +576,7 @@
                 <div class="flex-between">
                     <h2>📑 سجل الفواتير المباعة اليوم</h2>
                     <button class="btn btn-danger" onclick="resetDailyAccount()">
-                        🔄 تصفير الحساب اليومي (إنهاء اليوم)
+                        🔄 تصفير الحساب اليومي (إنهاء اليوم وحفظه بالأرشيف)
                     </button>
                 </div>
                 <table class="custom-table">
@@ -622,22 +594,23 @@
                 </table>
             </div>
 
-            <!-- التقرير المخصص بين تاريخين -->
+            <!-- التقرير المخصص بين تاريخين / تقرير الشهر -->
             <div class="content-box" style="border: 2px dashed var(--accent);">
-                <h2>📅 التقرير المخصص (من تاريخ إلى تاريخ)</h2>
-                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">اختر الفترة المطلوبة لعرض المبيعات والأرباح بدقة دون تغيير البيانات.</p>
+                <h2>📅 تقرير مبيعات وأرباح الشهر والتقرير المخصص</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">حتى لو قمت بتصفير المبيعات اليومية، تبقى جميع البيانات محفوظة هنا لاستخراج حسابات الشهر بالكامل.</p>
                 
                 <div class="form-grid" style="align-items: flex-end;">
                     <div class="form-group">
-                        <label for="report-start-date">من تاريخ:</label>
+                        <label for="report-start-date">من تاريخ (يوم / شهر / سنة):</label>
                         <input type="text" id="report-start-date" placeholder="يوم / شهر / سنة" maxlength="10" onkeyup="formatDateInput(this)" oninput="filterCustomReport()">
                     </div>
                     <div class="form-group">
-                        <label for="report-end-date">إلى تاريخ:</label>
+                        <label for="report-end-date">إلى تاريخ (يوم / شهر / سنة):</label>
                         <input type="text" id="report-end-date" placeholder="يوم / شهر / سنة" maxlength="10" onkeyup="formatDateInput(this)" oninput="filterCustomReport()">
                     </div>
-                    <div>
-                        <button class="btn" style="width: 100%; height: 44px;" onclick="resetCustomReportDates()">إلغاء التصفية</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-warning" style="height: 44px; flex: 1;" onclick="setCurrentMonthRange()">📅 مبيعات هذا الشهر</button>
+                        <button class="btn" style="height: 44px;" onclick="resetCustomReportDates()">إلغاء التصفية</button>
                     </div>
                 </div>
 
@@ -661,12 +634,13 @@
                         <tr>
                             <th>رقم الفاتورة</th>
                             <th>التاريخ والوقت</th>
+                            <th>المواد المباعة</th>
                             <th>المبلغ الإجمالي</th>
                             <th>الربح</th>
                         </tr>
                     </thead>
                     <tbody id="custom-report-table-body">
-                        <tr><td colspan="4" style="text-align:center; color:#94a3b8;">الرجاء تحديد الفترة لعرض التفاصيل</td></tr>
+                        <tr><td colspan="5" style="text-align:center; color:#94a3b8;">الرجاء تحديد الفترة لعرض التفاصيل</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -755,6 +729,7 @@
         ];
 
         let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
+        let archivedSales = JSON.parse(localStorage.getItem('cashier_archived_sales')) || [];
         let invoiceCounter = parseInt(localStorage.getItem('cashier_inv_counter')) || 1;
         let cart = [];
         let currentPurchaseInvoice = [];
@@ -782,6 +757,7 @@
             localStorage.setItem('cashier_warehouse_items', JSON.stringify(warehouseItems));
             localStorage.setItem('cashier_products', JSON.stringify(products));
             localStorage.setItem('cashier_sales', JSON.stringify(salesHistory));
+            localStorage.setItem('cashier_archived_sales', JSON.stringify(archivedSales));
             localStorage.setItem('cashier_inv_counter', invoiceCounter.toString());
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
@@ -1245,6 +1221,32 @@
             return `${year}-${month}-${day}`;
         }
 
+        function formatDateToUI(yyyy_mm_dd) {
+            if(!yyyy_mm_dd) return '';
+            let p = yyyy_mm_dd.split('-');
+            if(p.length !== 3) return yyyy_mm_dd;
+            return `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        function setCurrentMonthRange() {
+            let now = new Date();
+            let y = now.getFullYear();
+            let m = String(now.getMonth() + 1).padStart(2, '0');
+            
+            let firstDayStr = `01/${m}/${y}`;
+            
+            let lastDayNum = new Date(y, now.getMonth() + 1, 0).getDate();
+            let lastDayStr = `${String(lastDayNum).padStart(2, '0')}/${m}/${y}`;
+
+            document.getElementById('report-start-date').value = firstDayStr;
+            document.getElementById('report-end-date').value = lastDayStr;
+            filterCustomReport();
+        }
+
+        function getAllSalesCombined() {
+            return [...archivedSales, ...salesHistory];
+        }
+
         function renderReports() {
             const countElem = document.getElementById('stat-invoices-count');
             const totalSalesElem = document.getElementById('stat-total-sales');
@@ -1272,11 +1274,11 @@
             totalProfitElem.innerText = sumProfit + ' د.ع';
 
             if (todaySales.length === 0) {
-                historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مسجلة اليوم</td></tr>`;
+                historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير نشطة في جدول اليوم الحالي</td></tr>`;
             } else {
                 historyBody.innerHTML = '';
                 todaySales.slice().reverse().forEach(inv => {
-                    let itemsDesc = inv.items.map(i => `${i.name} (${i.qty})`).join(', ');
+                    let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '';
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>#${inv.invoiceNo}</td>
@@ -1309,11 +1311,13 @@
                 salesElem.innerText = '0 د.ع';
                 profitElem.innerText = '0 د.ع';
                 countElem.innerText = '0';
-                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">الرجاء كتابة تاريخ البداية والنهاية بالشكل الصحيح (يوم / شهر / سنة)</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">أدخل تاريخ البداية والنهاية (يوم / شهر / سنة) أو انقر على "مبيعات هذا الشهر"</td></tr>`;
                 return;
             }
 
-            const filtered = salesHistory.filter(inv => {
+            let allSales = getAllSalesCombined();
+
+            const filtered = allSales.filter(inv => {
                 let invDate = inv.date || (inv.time ? inv.time.slice(0, 10) : '');
                 return invDate >= startDate && invDate <= endDate;
             });
@@ -1326,16 +1330,18 @@
             countElem.innerText = filtered.length;
 
             if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">لا توجد فواتير في هذه الفترة المحددة</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد فواتير مسجلة في هذه الفترة المحددة</td></tr>`;
                 return;
             }
 
             tableBody.innerHTML = '';
             filtered.slice().reverse().forEach(inv => {
+                let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '-';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>#${inv.invoiceNo}</td>
                     <td>${inv.time}</td>
+                    <td>${itemsDesc}</td>
                     <td><strong>${inv.total} د.ع</strong></td>
                     <td style="color: var(--green); font-weight: bold;">${inv.profit} د.ع</td>
                 `;
@@ -1350,12 +1356,16 @@
         }
 
         function resetDailyAccount() {
-            if (confirm('هل أنت متأكد من تصفير الحساب اليومي وإنهاء اليوم؟ سيتم مسح سجل فواتير المبيعات الحالية.')) {
+            if (salesHistory.length === 0) {
+                alert('لا توجد مبيعات في جدول اليوم لتصفيرها.');
+                return;
+            }
+            if (confirm('هل أنت متأكد من تصفير الحساب اليومي؟ سيتم أرشفة الفواتير اليومية بأمان لتظل موجودة في تقارير الشهر دون مسح بياناتك.')) {
+                archivedSales.push(...salesHistory);
                 salesHistory = [];
-                invoiceCounter = 1;
                 saveData();
                 refreshAllViews();
-                alert('تم تصفير الحساب اليومي بنجاح.');
+                alert('تم تصفير الحساب اليومي ونقل البيانات إلى أرشيف التقارير بنجاح!');
             }
         }
 
@@ -1430,6 +1440,7 @@
                 warehouseItems,
                 products,
                 salesHistory,
+                archivedSales,
                 invoiceCounter
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
@@ -1453,6 +1464,7 @@
                         warehouseItems = parsed.warehouseItems || [];
                         products = parsed.products;
                         salesHistory = parsed.salesHistory || [];
+                        archivedSales = parsed.archivedSales || [];
                         invoiceCounter = parsed.invoiceCounter || 1;
                         saveData();
                         refreshAllViews();
