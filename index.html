@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل (مع زر إلغاء المادة من الفاتورة)</title>
+    <title>أسواق سيف - نظام الكاشير المتكامل (تجاوز الكمية الصفرية)</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -183,6 +183,7 @@
         .products-container { flex: 2; display: flex; flex-direction: column; gap: 1rem; }
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; }
 
+        /* الكارت الطبيعي للمنتج */
         .product-card {
             background: var(--card);
             color: var(--text);
@@ -194,12 +195,41 @@
             border: 2px solid transparent;
             user-select: none;
             transition: all 0.15s ease-in-out;
+            position: relative;
         }
 
         .product-card:hover { border-color: var(--accent); transform: translateY(-2px); }
         .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--text); }
         .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
         .product-card .qty { color: #94a3b8; font-size: 0.85rem; margin-top: 0.4rem; }
+
+        /* تصميم كارت المنتج عند وصول الكمية إلى zero (0) */
+        .product-card.out-of-stock {
+            background: #fef2f2 !important;
+            border: 2px solid #ef4444 !important;
+        }
+
+        body.dark-mode .product-card.out-of-stock {
+            background: #2c0b0e !important;
+            border: 2px solid #ef4444 !important;
+        }
+
+        .product-card.out-of-stock h4 {
+            color: #dc2626 !important;
+        }
+
+        body.dark-mode .product-card.out-of-stock h4 {
+            color: #fca5a5 !important;
+        }
+
+        .product-card.out-of-stock .qty {
+            color: #dc2626 !important;
+            font-weight: bold;
+        }
+
+        body.dark-mode .product-card.out-of-stock .qty {
+            color: #fca5a5 !important;
+        }
 
         .cart-container {
             flex: 1;
@@ -302,7 +332,6 @@
         .cart-item-controls { display: flex; align-items: center; gap: 6px; }
         .qty-btn { background: var(--border); color: var(--text); border: none; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        /* زر الحذف X الخاص بإلغاء المادة من الفاتورة */
         .remove-item-btn {
             background: rgba(220, 38, 38, 0.15);
             color: #dc2626;
@@ -839,7 +868,7 @@
 
         let products = JSON.parse(localStorage.getItem('cashier_products')) || [
             { id: 1, barcode: '1001', name: 'شاي', cost: 1000, price: 1500, qty: 10 },
-            { id: 2, barcode: '1002', name: 'نسكافيه', cost: 4000, price: 6000, qty: 15 }
+            { id: 2, barcode: '1002', name: 'نسكافيه', cost: 4000, price: 6000, qty: 0 }
         ];
 
         let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
@@ -990,10 +1019,13 @@
             matches.forEach(prod => {
                 const div = document.createElement('div');
                 div.className = 'search-result-item';
+                let isZero = prod.qty <= 0;
+                let qtyLabel = isZero ? `<small style="display:block; color:#dc2626; font-weight:bold;">متوفر: 0 (نافد)</small>` : `<small style="display:block; opacity:0.7;">متوفر: ${prod.qty}</small>`;
+                
                 div.innerHTML = `
                     <div>
                         <strong>${prod.name}</strong>
-                        <small style="display:block; opacity:0.7;">متوفر: ${prod.qty}</small>
+                        ${qtyLabel}
                     </div>
                     <span style="color:var(--green); font-weight:bold;">${prod.price} د.ع</span>
                 `;
@@ -1025,40 +1057,36 @@
             }
         }
 
+        // عرض المنتجات وتطبيق اللون الأحمر للمواد ذات الكمية 0
         function renderPosProducts() {
             const grid = document.getElementById('pos-products-grid');
             if (!grid) return;
             grid.innerHTML = '';
             products.forEach(prod => {
                 const card = document.createElement('div');
-                card.className = 'product-card';
+                
+                const isOutOfStock = prod.qty <= 0;
+                card.className = isOutOfStock ? 'product-card out-of-stock' : 'product-card';
+                
+                let qtyText = isOutOfStock ? 'متوفر: 0 (نافد)' : `متوفر: ${prod.qty}`;
+
                 card.innerHTML = `
                     <h4>${prod.name}</h4>
                     <div class="price">${prod.price} د.ع</div>
-                    <div class="qty">متوفر: ${prod.qty}</div>
+                    <div class="qty">${qtyText}</div>
                 `;
                 card.onclick = () => addToCart(prod.id);
                 grid.appendChild(card);
             });
         }
 
+        // السماح بالإضافة إلى السلة حتى وإن كانت الكمية 0
         function addToCart(productId) {
             const prod = products.find(p => p.id === productId);
-            const invType = document.getElementById('invoice-type').value;
-
             if (!prod) return;
-            
-            if (invType === 'sale' && prod.qty <= 0) {
-                alert('المنتج نفد من المحل أو غير متوفر!');
-                return;
-            }
 
             const existing = cart.find(item => item.id === productId);
             if (existing) {
-                if (invType === 'sale' && existing.qty >= prod.qty) {
-                    alert('لا توجد كمية إضافية متوفرة في المحل!');
-                    return;
-                }
                 existing.qty++;
             } else {
                 cart.push({ id: prod.id, name: prod.name, price: prod.price, cost: prod.cost, qty: 1 });
@@ -1066,26 +1094,20 @@
             renderCart();
         }
 
+        // السماح بزيادة العدد بدون تقييد بالمتوفر
         function changeCartQty(productId, delta) {
             const item = cart.find(i => i.id === productId);
             if (!item) return;
-            const prod = products.find(p => p.id === productId);
-            const invType = document.getElementById('invoice-type').value;
 
             const newQty = item.qty + delta;
             if (newQty > 0) {
-                if (invType === 'sale' && newQty > prod.qty) {
-                    alert('الكمية المطلوبة تتجاوز المتوفر بالمحل!');
-                } else {
-                    item.qty = newQty;
-                }
+                item.qty = newQty;
             } else {
                 removeFromCart(productId);
             }
             renderCart();
         }
 
-        // دالة إلغاء وحذف المادة مباشرة من الفاتورة
         function removeFromCart(productId) {
             cart = cart.filter(i => i.id !== productId);
             renderCart();
@@ -1255,7 +1277,7 @@
                     <td>${prod.name}</td>
                     <td>${prod.cost} د.ع</td>
                     <td>${prod.price} د.ع</td>
-                    <td><strong>${prod.qty}</strong></td>
+                    <td><strong style="${prod.qty <= 0 ? 'color:#ef4444;' : ''}">${prod.qty}</strong></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1383,7 +1405,7 @@
                     <td>${prod.name}</td>
                     <td>${prod.cost} د.ع</td>
                     <td>${prod.price} د.ع</td>
-                    <td><strong>${prod.qty}</strong></td>
+                    <td><strong style="${prod.qty <= 0 ? 'color:#ef4444;' : ''}">${prod.qty}</strong></td>
                     <td>
                         <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteShopProduct(${prod.id})">حذف</button>
                     </td>
