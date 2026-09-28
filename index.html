@@ -314,6 +314,13 @@
         }
         input:checked + .slider-switch { background-color: var(--accent); }
         input:checked + .slider-switch:before { transform: translateX(26px); }
+
+        /* تخصيص نافذة طباعة الباركود */
+        @media print {
+            body * { visibility: hidden; }
+            #print-barcode-section, #print-barcode-section * { visibility: visible; }
+            #print-barcode-section { position: absolute; left: 0; top: 0; width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -486,6 +493,7 @@
                             <th>سعر التكلفة</th>
                             <th>سعر البيع</th>
                             <th>الكمية المتوفرة</th>
+                            <th>طباعة باركود</th>
                         </tr>
                     </thead>
                     <tbody id="shop-table-body"></tbody>
@@ -566,7 +574,7 @@
                             <th>سعر التكلفة</th>
                             <th>سعر البيع</th>
                             <th>الكمية المتاحة</th>
-                            <th>إجراءات</th>
+                            <th>إجراءات وطباعة</th>
                         </tr>
                     </thead>
                     <tbody id="purchases-table-body"></tbody>
@@ -735,6 +743,14 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- عنصر مخفي لطباعة الباركود -->
+    <div id="print-barcode-section" style="display: none; text-align: center; padding: 20px;">
+        <h2 id="print-store-name" style="margin-bottom: 5px;">أسواق سيف</h2>
+        <h3 id="print-prod-name" style="font-size: 18px; margin-bottom: 5px;"></h3>
+        <div id="print-prod-price" style="font-size: 16px; font-weight: bold; margin-bottom: 10px;"></div>
+        <div id="print-barcode-text" style="font-family: monospace; font-size: 24px; letter-spacing: 4px; font-weight: bold; border: 2px dashed #000; display: inline-block; padding: 5px 15px;"></div>
     </div>
 
     <script>
@@ -1074,11 +1090,29 @@
                     <td>${prod.cost} د.ع</td>
                     <td>${prod.price} د.ع</td>
                     <td><strong>${prod.qty}</strong></td>
+                    <td>
+                        <button class="btn btn-warning" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="printProductBarcode('${prod.barcode || ''}', '${prod.name}', ${prod.price})">🖨️ طباعة باركود</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
             const costValElem = document.getElementById('shop-total-cost-val');
             if (costValElem) costValElem.innerText = totalCapitalCost + ' د.ع';
+        }
+
+        // --- وظيفة طباعة الباركود للمنتج ---
+        function printProductBarcode(barcode, name, price) {
+            if (!barcode) {
+                alert('هذا المنتج لا يحتوي على باركود مسجل!');
+                return;
+            }
+            document.getElementById('print-prod-name').innerText = name;
+            document.getElementById('print-prod-price').innerText = 'السعر: ' + price + ' د.ع';
+            document.getElementById('print-barcode-text').innerText = '*' + barcode + '*';
+            
+            document.getElementById('print-barcode-section').style.display = 'block';
+            window.print();
+            document.getElementById('print-barcode-section').style.display = 'none';
         }
 
         // --- 4. المشتريات وفاتورة الشراء مع الباركود الذكي ---
@@ -1204,6 +1238,7 @@
                     <td>${prod.price} د.ع</td>
                     <td><strong>${prod.qty}</strong></td>
                     <td>
+                        <button class="btn btn-warning" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-left: 5px;" onclick="printProductBarcode('${prod.barcode || ''}', '${prod.name}', ${prod.price})">🖨️ باركود</button>
                         <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteShopProduct(${prod.id})">حذف</button>
                     </td>
                 `;
