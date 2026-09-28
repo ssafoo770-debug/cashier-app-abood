@@ -397,6 +397,57 @@
         .slider-switch:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider-switch { background-color: var(--accent); }
         input:checked + .slider-switch:before { transform: translateX(26px); }
+
+        /* نافذة المودال لكشف حساب الزبون */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: var(--card);
+            color: var(--text);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .clickable-customer {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        .clickable-customer:hover {
+            color: var(--green);
+        }
     </style>
 </head>
 <body>
@@ -416,6 +467,33 @@
                 </div>
                 <button type="submit" class="btn btn-green" style="width: 100%; font-size: 1.1rem;">دخول</button>
             </form>
+        </div>
+    </div>
+
+    <!-- نافذة كشف حساب الزبون التفصيلي -->
+    <div id="customer-statement-modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="close-modal-btn" onclick="closeCustomerModal()">✕</button>
+            <h2 id="modal-customer-title" style="color: var(--accent); margin-bottom: 0.3rem;">📋 كشف حساب الزبون</h2>
+            <p id="modal-customer-phone" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 1rem;"></p>
+            
+            <div style="background: var(--table-header); padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>المبلغ الكلي المتبقي على الزبون:</span>
+                <strong id="modal-customer-total" style="font-size: 1.3rem; color: var(--danger);">0 د.ع</strong>
+            </div>
+
+            <h3>📑 سجل الحركات التفصيلي (ديون ومشتريات وتسديدات):</h3>
+            <table class="custom-table" style="margin-top: 0.8rem;">
+                <thead>
+                    <tr>
+                        <th>التاريخ والوقت</th>
+                        <th>نوع الحركة</th>
+                        <th>التفاصيل والمواد المشتراة</th>
+                        <th>المبلغ</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-statement-body"></tbody>
+            </table>
         </div>
     </div>
 
@@ -502,7 +580,8 @@
                     </select>
 
                     <div id="customer-name-group" style="display: none; margin-top: 0.6rem;">
-                        <input type="text" id="customer-name-input" class="cart-search-input" placeholder="👤 اكتب اسم الزبون المطلوب للدين..." style="border-color: #d97706; font-weight: bold;">
+                        <input type="text" id="customer-name-input" class="cart-search-input" list="registered-customers-list" placeholder="👤 اكتب اسم الزبون ثم اضغط Enter..." onkeydown="handleCustomerInputKey(event)" style="border-color: #d97706; font-weight: bold;">
+                        <datalist id="registered-customers-list"></datalist>
                     </div>
 
                     <div class="cart-search-box">
@@ -546,14 +625,33 @@
                 </div>
             </div>
 
+            <!-- نموذج إدخال زبون جديد بمستند الديون -->
             <div class="content-box">
-                <h2>📖 قائمة ديون الزبائن الحالية</h2>
-                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.2rem;">يمكنك تسديد الدين بالكامل أو تسديد جزء منه بكل سهولة.</p>
+                <h2>➕ إضافة أو تسجيل بيانات زبون جديد في الدفتر</h2>
+                <form id="add-customer-form" onsubmit="handleAddCustomer(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>اسم الزبون الكامل</label>
+                            <input type="text" id="new-cust-name" placeholder="مثال: أبو علي" required>
+                        </div>
+                        <div class="form-group">
+                            <label>رقم التليفون / الهاتف</label>
+                            <input type="text" id="new-cust-phone" placeholder="مثال: 07800000000">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ حفظ الزبون في دفتر الديون</button>
+                </form>
+            </div>
+
+            <div class="content-box">
+                <h2>📖 قائمة ديون الزبائن الحالية (اضغط على اسم الزبون لتفاصيل كشف الحساب)</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.2rem;">يمكنك الضغط على اسم الزبون للتعرف على ما اشتراه بالتفاصيل والتواريخ، أو التسديد التلقائي.</p>
                 <table class="custom-table" style="margin-top: 1rem;">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>اسم الزبون</th>
+                            <th>اسم الزبون (انقر للتفاصيل)</th>
+                            <th>رقم الهاتف</th>
                             <th>المبلغ المطلوب الكلي</th>
                             <th>تاريخ آخر دين/حركة</th>
                             <th>إجراء وتسديد</th>
@@ -1031,6 +1129,7 @@
             renderPosProducts();
             renderCart();
             renderDebts();
+            renderCustomersDatalist();
             renderWarehouseTable();
             renderShopTable();
             renderPurchaseInvoiceTable();
@@ -1101,10 +1200,34 @@
                 customerGroup.style.display = 'block';
                 btn.className = 'btn btn-warning';
                 btn.innerText = '📖 تسجيل الفاتورة كـ ديـن';
+                setTimeout(() => {
+                    const custInput = document.getElementById('customer-name-input');
+                    if (custInput) custInput.focus();
+                }, 100);
             } else {
                 btn.className = 'btn btn-green';
                 btn.innerText = 'إتمام عملية البيع';
             }
+        }
+
+        // عند كتابة اسم الزبون والضغط على Enter بالنقطة
+        function handleCustomerInputKey(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const cartSearch = document.getElementById('cart-search-input');
+                if (cartSearch) cartSearch.focus();
+            }
+        }
+
+        function renderCustomersDatalist() {
+            const list = document.getElementById('registered-customers-list');
+            if (!list) return;
+            list.innerHTML = '';
+            debts.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.customer;
+                list.appendChild(opt);
+            });
         }
 
         function renderPosProducts() {
@@ -1254,6 +1377,7 @@
                     debts.push({
                         id: debts.length > 0 ? Math.max(...debts.map(d => d.id)) + 1 : 1,
                         customer: customerName,
+                        phone: 'غير محدد',
                         amount: total,
                         lastUpdate: fullDateStr
                     });
@@ -1288,6 +1412,34 @@
             else alert('تم إتمام عملية البيع بنجاح!');
         }
 
+        // إضافة زبون جديد من واجهة الديون
+        function handleAddCustomer(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-cust-name').value.trim();
+            const phone = document.getElementById('new-cust-phone').value.trim() || 'غير محدد';
+
+            let existing = debts.find(d => d.customer.toLowerCase() === name.toLowerCase());
+            if (existing) {
+                existing.phone = phone;
+                alert(`تم تحديث رقم هاتف الزبون [${name}] بنجاح!`);
+            } else {
+                let now = new Date();
+                let dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+                debts.push({
+                    id: debts.length > 0 ? Math.max(...debts.map(d => d.id)) + 1 : 1,
+                    customer: name,
+                    phone: phone,
+                    amount: 0,
+                    lastUpdate: dateStr
+                });
+                alert(`تم تسجيل الزبون [${name}] بنجاح بصفحة الديون!`);
+            }
+
+            document.getElementById('add-customer-form').reset();
+            saveData();
+            refreshAllViews();
+        }
+
         // إدارات وسجل الديون
         function renderDebts() {
             const tbody = document.getElementById('debts-table-body');
@@ -1299,13 +1451,14 @@
 
             tbody.innerHTML = '';
             if (debts.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">لا توجد أي ديون مسجلة حالياً</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد أي ديون مسجلة حالياً</td></tr>`;
             } else {
                 debts.forEach((debt, index) => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${index + 1}</td>
-                        <td><strong>${debt.customer}</strong></td>
+                        <td><span class="clickable-customer" onclick="openCustomerStatement('${debt.customer}')">${debt.customer}</span></td>
+                        <td>${debt.phone || 'غير محدد'}</td>
                         <td style="color:#d97706; font-weight:bold; font-size:1.1rem;">${debt.amount} د.ع</td>
                         <td>${debt.lastUpdate}</td>
                         <td>
@@ -1334,6 +1487,76 @@
                     paymentsBody.appendChild(tr);
                 });
             }
+        }
+
+        // كشف حساب تفصيلي للزبون
+        function openCustomerStatement(custName) {
+            const customerObj = debts.find(d => d.customer === custName);
+            const modal = document.getElementById('customer-statement-modal');
+            const modalTitle = document.getElementById('modal-customer-title');
+            const modalPhone = document.getElementById('modal-customer-phone');
+            const modalTotal = document.getElementById('modal-customer-total');
+            const modalBody = document.getElementById('modal-statement-body');
+
+            modalTitle.innerText = `📋 كشف حساب تفصيلي: ${custName}`;
+            modalPhone.innerText = `📱 رقم الهاتف: ${customerObj ? (customerObj.phone || 'غير محدد') : 'غير محدد'}`;
+            modalTotal.innerText = `${customerObj ? customerObj.amount : 0} د.ع`;
+
+            // جلب حركات الدين والمشتريات الخاصة بالزبون
+            let allSalesCombined = getAllSalesCombined();
+            let custInvoices = allSalesCombined.filter(inv => inv.type === 'debt' && inv.customer.toLowerCase() === custName.toLowerCase());
+            let custPays = debtPayments.filter(p => p.customer.toLowerCase() === custName.toLowerCase());
+
+            // تجميع كل الحركات بترتيب زمني
+            let activities = [];
+
+            custInvoices.forEach(inv => {
+                let itemsList = inv.items ? inv.items.map(i => `${i.name} (عدد ${i.qty})`).join('، ') : 'مشتريات آجل';
+                activities.push({
+                    time: inv.time,
+                    type: 'دين (شراء آجل)',
+                    details: itemsList,
+                    amount: inv.total,
+                    isDebt: true
+                });
+            });
+
+            custPays.forEach(p => {
+                activities.push({
+                    time: p.time,
+                    type: 'تسديد نقد',
+                    details: 'دفعة مسددة من الدين',
+                    amount: p.paidAmount,
+                    isDebt: false
+                });
+            });
+
+            // ترتيب زمني تصاعدي حسب الوقت
+            activities.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+            modalBody.innerHTML = '';
+            if (activities.length === 0) {
+                modalBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">لا توجد حركات سابقة لهذا الزبون</td></tr>`;
+            } else {
+                activities.forEach(act => {
+                    const tr = document.createElement('tr');
+                    let amtStyle = act.isDebt ? 'color:#dc2626; font-weight:bold;' : 'color:#16a34a; font-weight:bold;';
+                    let sign = act.isDebt ? '+' : '-';
+                    tr.innerHTML = `
+                        <td>${act.time}</td>
+                        <td><strong>${act.type}</strong></td>
+                        <td>${act.details}</td>
+                        <td style="${amtStyle}">${sign} ${act.amount} د.ع</td>
+                    `;
+                    modalBody.appendChild(tr);
+                });
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customer-statement-modal').style.display = 'none';
         }
 
         function payDebtModal(debtId) {
@@ -1366,11 +1589,7 @@
                 time: dateStr
             });
 
-            if (debtObj.amount <= 0) {
-                debts = debts.filter(d => d.id !== debtId);
-            } else {
-                debtObj.lastUpdate = dateStr;
-            }
+            debtObj.lastUpdate = dateStr;
 
             saveData();
             refreshAllViews();
