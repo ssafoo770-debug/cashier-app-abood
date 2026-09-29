@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>أسواق سيف - نظام الكاشير المتكامل ونظام الديون</title>
+    <!-- استدعاء مكتبات Firebase السحابية -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         :root {
             --primary: #0f172a;
@@ -454,7 +457,7 @@
     <div id="login-overlay">
         <div class="login-card">
             <h2 style="margin-bottom: 0.5rem; color: var(--accent);">🔐 تسجيل الدخول</h2>
-            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام محلي بالكامل (لا يتطلب إنترنت)</p>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام متصل سحابياً (تحديث تلقائي بين كافة الأجهزة)</p>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label>اسم المستخدم</label>
@@ -624,7 +627,6 @@
                 </div>
             </div>
 
-            <!-- نموذج إدخال زبون جديد بمستند الديون -->
             <div class="content-box">
                 <h2>➕ إضافة أو تسجيل بيانات زبون جديد في الدفتر</h2>
                 <form id="add-customer-form" onsubmit="handleAddCustomer(event)">
@@ -989,28 +991,30 @@
     </div>
 
     <script>
-        let users = JSON.parse(localStorage.getItem('cashier_users')) || [
+        // إعدادات Firebase السحابية العامة (قاعدة بيانات مفتوحة وتعمل مباشرة)
+        const firebaseConfig = {
+            databaseURL: "https://sayef-market-default-rtdb.firebaseio.com"
+        };
+        
+        // تهيئة السحابة
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        let users = [
             { username: 'admin', password: '123', role: 'admin' },
             { username: 'cashier', password: '123', role: 'staff' },
             { username: 'designer', password: '123', role: 'admin' }
         ];
 
-        let warehouseItems = JSON.parse(localStorage.getItem('cashier_warehouse_items')) || [
-            { id: 1, name: 'شاي', qty: 20 },
-            { id: 2, name: 'نسكافيه', qty: 30 }
-        ];
-
-        let products = JSON.parse(localStorage.getItem('cashier_products')) || [
-            { id: 1, barcode: '1001', name: 'شاي', cost: 1000, price: 1500, qty: 10 },
-            { id: 2, barcode: '1002', name: 'نسكافيه', cost: 4000, price: 6000, qty: 0 }
-        ];
-
-        let debts = JSON.parse(localStorage.getItem('cashier_debts')) || [];
-        let debtPayments = JSON.parse(localStorage.getItem('cashier_debt_payments')) || [];
-
-        let salesHistory = JSON.parse(localStorage.getItem('cashier_sales')) || [];
-        let archivedSales = JSON.parse(localStorage.getItem('cashier_archived_sales')) || [];
-        let invoiceCounter = parseInt(localStorage.getItem('cashier_inv_counter')) || 1;
+        let warehouseItems = [];
+        let products = [];
+        let debts = [];
+        let debtPayments = [];
+        let salesHistory = [];
+        let archivedSales = [];
+        let invoiceCounter = 1;
         let cart = [];
         let currentPurchaseInvoice = [];
 
@@ -1032,15 +1036,19 @@
             }
         }
 
+        // حفظ البيانات سحابياً لتحديث كل الأجهزة
         function saveData() {
-            localStorage.setItem('cashier_users', JSON.stringify(users));
-            localStorage.setItem('cashier_warehouse_items', JSON.stringify(warehouseItems));
-            localStorage.setItem('cashier_products', JSON.stringify(products));
-            localStorage.setItem('cashier_debts', JSON.stringify(debts));
-            localStorage.setItem('cashier_debt_payments', JSON.stringify(debtPayments));
-            localStorage.setItem('cashier_sales', JSON.stringify(salesHistory));
-            localStorage.setItem('cashier_archived_sales', JSON.stringify(archivedSales));
-            localStorage.setItem('cashier_inv_counter', invoiceCounter.toString());
+            db.ref('market_data').set({
+                users: users,
+                warehouseItems: warehouseItems,
+                products: products,
+                debts: debts,
+                debtPayments: debtPayments,
+                salesHistory: salesHistory,
+                archivedSales: archivedSales,
+                invoiceCounter: invoiceCounter
+            });
+
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
             } else {
@@ -1048,10 +1056,32 @@
             }
         }
 
+        // الاستماع للتغييرات السحابية بشكل لحظي لتحديث أجهزة الجميع فوراً
+        function listenToCloudUpdates() {
+            db.ref('market_data').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    users = data.users || users;
+                    warehouseItems = data.warehouseItems || [];
+                    products = data.products || [];
+                    debts = data.debts || [];
+                    debtPayments = data.debtPayments || [];
+                    salesHistory = data.salesHistory || [];
+                    archivedSales = data.archivedSales || [];
+                    invoiceCounter = data.invoiceCounter || 1;
+                    refreshAllViews();
+                } else {
+                    saveData();
+                }
+            });
+        }
+
         window.onload = function() {
             const isDarkSaved = localStorage.getItem('cashier_dark_mode') === 'true';
             const toggleElement = document.getElementById('darkModeToggle');
             if (toggleElement) toggleElement.checked = isDarkSaved;
+
+            listenToCloudUpdates();
 
             if (currentUser) {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -1366,7 +1396,6 @@
                     if (prod) prod.qty += cartItem.qty;
                 });
             } else if (invType === 'debt') {
-                // المبيعات الآجلة لا تحسب أرباحها أو مبيعاتها النقدية فوراً حتى تُسدد
                 recordTotal = 0; 
                 recordProfit = 0; 
 
@@ -1403,10 +1432,10 @@
                 time: fullDateStr,
                 items: [...cart],
                 discount: discount,
-                originalTotal: total,           // المبلغ الأصلي للفاتورة
-                originalProfit: calculatedProfit,// الربح المعلق الكامل
-                paidAmount: invType === 'debt' ? 0 : total, // المسدد
-                paidProfit: invType === 'debt' ? 0 : calculatedProfit, // الربح المحقق
+                originalTotal: total,
+                originalProfit: calculatedProfit,
+                paidAmount: invType === 'debt' ? 0 : total,
+                paidProfit: invType === 'debt' ? 0 : calculatedProfit,
                 total: recordTotal,
                 profit: recordProfit
             });
@@ -1415,7 +1444,6 @@
             if (discountInput) discountInput.value = '0';
             document.getElementById('customer-name-input').value = '';
             saveData();
-            refreshAllViews();
 
             if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!');
             else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، ولن تُضاف الأرباح حتى يتم التسديد!`);
@@ -1446,7 +1474,6 @@
 
             document.getElementById('add-customer-form').reset();
             saveData();
-            refreshAllViews();
         }
 
         function renderDebts() {
@@ -1590,7 +1617,6 @@
             let dateStrShort = `${year}-${month}-${day}`;
             let dateStr = `${dateStrShort} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
 
-            // حساب الربح المحقق نسبياً من الفواتير الآجلة غير المسددة للزبون
             let remainingToDistribute = payAmount;
             let totalRealizedProfit = 0;
 
@@ -1602,7 +1628,6 @@
                 let unpaidOnInvoice = inv.originalTotal - inv.paidAmount;
                 let paymentForThisInvoice = Math.min(remainingToDistribute, unpaidOnInvoice);
 
-                // حساب النسبة المسددة من هذه الفاتورة
                 let profitRatio = inv.originalTotal > 0 ? (inv.originalProfit / inv.originalTotal) : 0;
                 let profitFromThisPayment = paymentForThisInvoice * profitRatio;
 
@@ -1613,7 +1638,6 @@
                 remainingToDistribute -= paymentForThisInvoice;
             }
 
-            // تدوير الأرقام للأمان المحاسبي
             totalRealizedProfit = Math.round(totalRealizedProfit);
 
             debtPayments.push({
@@ -1624,7 +1648,6 @@
                 time: dateStr
             });
 
-            // تسجيل حركة التسديد المباشرة بجدول المبيعات كحركة مقبوضات وأرباح فعلياً باليوم الحاضر
             salesHistory.push({
                 invoiceNo: invoiceCounter++,
                 type: 'debt_payment',
@@ -1640,7 +1663,6 @@
             debtObj.lastUpdate = dateStr;
 
             saveData();
-            refreshAllViews();
             alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!\nتم تحويل ربح قدره (${totalRealizedProfit} د.ع) إلى أرباح اليوم الفعلي.`);
         }
 
@@ -1659,7 +1681,6 @@
 
             document.getElementById('add-warehouse-form').reset();
             saveData();
-            renderWarehouseTable();
             alert('تمت إضافة البضاعة للمخزن بنجاح!');
         }
 
@@ -1685,7 +1706,6 @@
             if (confirm('هل أنت متأكد من حذف هذا المنتج من المخزن؟')) {
                 warehouseItems = warehouseItems.filter(w => w.id !== id);
                 saveData();
-                renderWarehouseTable();
             }
         }
 
@@ -1816,8 +1836,7 @@
 
             currentPurchaseInvoice = [];
             saveData();
-            refreshAllViews();
-            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح!');
+            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح وتأكيده للجميع!');
         }
 
         function renderPurchasesLogTable() {
@@ -1846,7 +1865,6 @@
             if (confirm('هل أنت متأكد من حذف هذا المنتج من المحل؟')) {
                 products = products.filter(p => p.id !== id);
                 saveData();
-                refreshAllViews();
             }
         }
 
@@ -1911,7 +1929,6 @@
 
             countElem.innerText = todaySales.length;
             
-            // المقبوضات النقود الفعلية المقبوضة بالأيدي (بيع نقد + تسديد ديون)
             let sumSales = todaySales.reduce((acc, inv) => acc + inv.total, 0);
             let sumProfit = todaySales.reduce((acc, inv) => acc + inv.profit, 0);
 
@@ -2037,7 +2054,6 @@
                 archivedSales.push(...salesHistory);
                 salesHistory = [];
                 saveData();
-                refreshAllViews();
                 alert('تم تصفير الحساب اليومي ونقل البيانات إلى أرشيف التقارير بنجاح!');
             }
         }
@@ -2056,7 +2072,6 @@
             users.push({ username: u, password: p, role: r });
             document.getElementById('add-user-form').reset();
             saveData();
-            renderUsersTable();
             alert('تمت إضافة المستخدم بنجاح!');
         }
 
@@ -2091,7 +2106,6 @@
             users[index].role = newRole;
             saveData();
             alert('تم تحديث بيانات المستخدم بنجاح!');
-            renderUsersTable();
         }
 
         function deleteUser(index) {
@@ -2102,7 +2116,6 @@
             if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
                 users.splice(index, 1);
                 saveData();
-                renderUsersTable();
             }
         }
 
@@ -2143,8 +2156,7 @@
                         archivedSales = parsed.archivedSales || [];
                         invoiceCounter = parsed.invoiceCounter || 1;
                         saveData();
-                        refreshAllViews();
-                        alert('تم استرجاع النسخة الاحتياطية بنجاح!');
+                        alert('تم استرجاع النسخة الاحتياطية بنجاح وتحديث كافة الأجهزة!');
                     } else {
                         alert('ملف النسخة الاحتياطية غير صالح!');
                     }
