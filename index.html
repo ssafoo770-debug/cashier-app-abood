@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل ونظام الديون</title>
+    <title>أسواق القيسي - نظام الكاشير المتكامل ونظام الديون</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -500,7 +500,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <span class="icon">🛒</span>
-            <h2>أسواق سيف</h2>
+            <h2>أسواق القيسي</h2>
         </div>
 
         <div class="user-badge">
@@ -1036,7 +1036,7 @@
                 invoiceCounter: invoiceCounter
             };
             
-            localStorage.setItem('sayed_market_db', JSON.stringify(systemData));
+            localStorage.setItem('al_qaisi_market_db', JSON.stringify(systemData));
 
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
@@ -1047,7 +1047,12 @@
 
         // استرجاع البيانات المخزنة فور فتح البرنامج
         function loadData() {
-            const savedDb = localStorage.getItem('sayed_market_db');
+            let savedDb = localStorage.getItem('al_qaisi_market_db');
+            if (!savedDb) {
+                // للتحويل السلس في حال وجود بيانات قديمة
+                savedDb = localStorage.getItem('sayed_market_db');
+            }
+            
             if (savedDb) {
                 try {
                     const data = JSON.parse(savedDb);
@@ -2137,7 +2142,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "sayed_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            downloadAnchor.setAttribute("download", "al_qaisi_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
