@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>أسواق سيف - نظام الكاشير المتكامل ونظام الديون</title>
-    <!-- استدعاء مكتبات Firebase السحابية -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         :root {
             --primary: #0f172a;
@@ -457,7 +454,7 @@
     <div id="login-overlay">
         <div class="login-card">
             <h2 style="margin-bottom: 0.5rem; color: var(--accent);">🔐 تسجيل الدخول</h2>
-            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام متصل سحابياً (تحديث تلقائي بين كافة الأجهزة)</p>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام حفظ تلقائي ودائم على الجهاز</p>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label>اسم المستخدم</label>
@@ -991,17 +988,7 @@
     </div>
 
     <script>
-        // إعدادات Firebase السحابية العامة (قاعدة بيانات مفتوحة وتعمل مباشرة)
-        const firebaseConfig = {
-            databaseURL: "https://sayef-market-default-rtdb.firebaseio.com"
-        };
-        
-        // تهيئة السحابة
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-
+        // المتغيرات الأساسية
         let users = [
             { username: 'admin', password: '123', role: 'admin' },
             { username: 'cashier', password: '123', role: 'staff' },
@@ -1036,9 +1023,9 @@
             }
         }
 
-        // حفظ البيانات سحابياً لتحديث كل الأجهزة
+        // حفظ البيانات دائماً داخل ذاكرة الجهاز المحلية (localStorage)
         function saveData() {
-            db.ref('market_data').set({
+            const systemData = {
                 users: users,
                 warehouseItems: warehouseItems,
                 products: products,
@@ -1047,7 +1034,9 @@
                 salesHistory: salesHistory,
                 archivedSales: archivedSales,
                 invoiceCounter: invoiceCounter
-            });
+            };
+            
+            localStorage.setItem('sayed_market_db', JSON.stringify(systemData));
 
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
@@ -1056,11 +1045,12 @@
             }
         }
 
-        // الاستماع للتغييرات السحابية بشكل لحظي لتحديث أجهزة الجميع فوراً
-        function listenToCloudUpdates() {
-            db.ref('market_data').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
+        // استرجاع البيانات المخزنة فور فتح البرنامج
+        function loadData() {
+            const savedDb = localStorage.getItem('sayed_market_db');
+            if (savedDb) {
+                try {
+                    const data = JSON.parse(savedDb);
                     users = data.users || users;
                     warehouseItems = data.warehouseItems || [];
                     products = data.products || [];
@@ -1069,11 +1059,12 @@
                     salesHistory = data.salesHistory || [];
                     archivedSales = data.archivedSales || [];
                     invoiceCounter = data.invoiceCounter || 1;
-                    refreshAllViews();
-                } else {
-                    saveData();
+                } catch (e) {
+                    console.error("خطأ في قراءة البيانات الحافظة", e);
                 }
-            });
+            } else {
+                saveData(); // حفظ القيم الافتراضية لأول مرة
+            }
         }
 
         window.onload = function() {
@@ -1081,7 +1072,8 @@
             const toggleElement = document.getElementById('darkModeToggle');
             if (toggleElement) toggleElement.checked = isDarkSaved;
 
-            listenToCloudUpdates();
+            loadData();
+            refreshAllViews();
 
             if (currentUser) {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -1443,11 +1435,13 @@
             cart = [];
             if (discountInput) discountInput.value = '0';
             document.getElementById('customer-name-input').value = '';
+            
             saveData();
+            refreshAllViews();
 
             if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!');
-            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، ولن تُضاف الأرباح حتى يتم التسديد!`);
-            else alert('تم إتمام عملية البيع بنجاح!');
+            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، وحُفظ بالمستندات!`);
+            else alert('تم إتمام عملية البيع وحفظ الفاتورة بنجاح!');
         }
 
         function handleAddCustomer(e) {
@@ -1474,6 +1468,7 @@
 
             document.getElementById('add-customer-form').reset();
             saveData();
+            refreshAllViews();
         }
 
         function renderDebts() {
@@ -1663,6 +1658,7 @@
             debtObj.lastUpdate = dateStr;
 
             saveData();
+            refreshAllViews();
             alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!\nتم تحويل ربح قدره (${totalRealizedProfit} د.ع) إلى أرباح اليوم الفعلي.`);
         }
 
@@ -1681,6 +1677,7 @@
 
             document.getElementById('add-warehouse-form').reset();
             saveData();
+            refreshAllViews();
             alert('تمت إضافة البضاعة للمخزن بنجاح!');
         }
 
@@ -1706,6 +1703,7 @@
             if (confirm('هل أنت متأكد من حذف هذا المنتج من المخزن؟')) {
                 warehouseItems = warehouseItems.filter(w => w.id !== id);
                 saveData();
+                refreshAllViews();
             }
         }
 
@@ -1836,7 +1834,8 @@
 
             currentPurchaseInvoice = [];
             saveData();
-            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح وتأكيده للجميع!');
+            refreshAllViews();
+            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح وتأكيد حفظها بالحاسبة!');
         }
 
         function renderPurchasesLogTable() {
@@ -1865,6 +1864,7 @@
             if (confirm('هل أنت متأكد من حذف هذا المنتج من المحل؟')) {
                 products = products.filter(p => p.id !== id);
                 saveData();
+                refreshAllViews();
             }
         }
 
@@ -2054,6 +2054,7 @@
                 archivedSales.push(...salesHistory);
                 salesHistory = [];
                 saveData();
+                refreshAllViews();
                 alert('تم تصفير الحساب اليومي ونقل البيانات إلى أرشيف التقارير بنجاح!');
             }
         }
@@ -2072,6 +2073,7 @@
             users.push({ username: u, password: p, role: r });
             document.getElementById('add-user-form').reset();
             saveData();
+            refreshAllViews();
             alert('تمت إضافة المستخدم بنجاح!');
         }
 
@@ -2105,6 +2107,7 @@
             users[index].password = newPass;
             users[index].role = newRole;
             saveData();
+            refreshAllViews();
             alert('تم تحديث بيانات المستخدم بنجاح!');
         }
 
@@ -2116,6 +2119,7 @@
             if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
                 users.splice(index, 1);
                 saveData();
+                refreshAllViews();
             }
         }
 
@@ -2156,7 +2160,8 @@
                         archivedSales = parsed.archivedSales || [];
                         invoiceCounter = parsed.invoiceCounter || 1;
                         saveData();
-                        alert('تم استرجاع النسخة الاحتياطية بنجاح وتحديث كافة الأجهزة!');
+                        refreshAllViews();
+                        alert('تم استرجاع النسخة الاحتياطية بنجاح!');
                     } else {
                         alert('ملف النسخة الاحتياطية غير صالح!');
                     }
