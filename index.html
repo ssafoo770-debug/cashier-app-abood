@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق القيسي - نظام الكاشير المتكامل ونظام الديون (متزامن سحابياً)</title>
+    <title>أسواق الباشاوات - نظام الكاشير المتكامل ونظام الديون (متزامن سحابياً)</title>
     <!-- مكتبات Firebase السحابية -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -503,7 +503,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <span class="icon">🛒</span>
-            <h2>أسواق القيسي</h2>
+            <h2>أسواق الباشاوات</h2>
         </div>
 
         <div class="user-badge">
@@ -1057,10 +1057,10 @@
             };
             
             // رفع البيانات سحابياً
-            db.ref('market_data').set(systemData).catch(err => console.error("خطأ في المزامنة السحابية:", err));
+            db.ref('al_bashawat_market_data').set(systemData).catch(err => console.error("خطأ في المزامنة السحابية:", err));
             
             // تخزين محلي للاحتياط
-            localStorage.setItem('al_qaisi_market_db', JSON.stringify(systemData));
+            localStorage.setItem('al_bashawat_market_db', JSON.stringify(systemData));
 
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
@@ -1071,7 +1071,7 @@
 
         // جلب واستماع البيانات بشكل فوري من Firebase
         function loadData() {
-            db.ref('market_data').on('value', (snapshot) => {
+            db.ref('al_bashawat_market_data').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     users = data.users || users;
@@ -1095,7 +1095,7 @@
         }
 
         function loadLocalFallback() {
-            let savedDb = localStorage.getItem('al_qaisi_market_db') || localStorage.getItem('sayed_market_db');
+            let savedDb = localStorage.getItem('al_bashawat_market_db') || localStorage.getItem('al_qaisi_market_db') || localStorage.getItem('sayed_market_db');
             if (savedDb) {
                 try {
                     const data = JSON.parse(savedDb);
@@ -1262,7 +1262,7 @@
             if (type === 'return') {
                 cartContainer.classList.add('return-mode');
                 btn.className = 'btn btn-danger';
-                btn.innerText = '↩️ إتمام إرجاع المشتريات';
+                btn.innerText = '↩️️ إتمام إرجاع المشتريات';
             } else if (type === 'debt') {
                 cartContainer.classList.add('debt-mode');
                 customerGroup.style.display = 'block';
@@ -2183,7 +2183,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "al_qaisi_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            downloadAnchor.setAttribute("download", "al_bashawat_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
