@@ -3,227 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام نقاط البيع المتطور</title>
-    <!-- تضمين الخطوط وتنسيقات التصميم -->
+    <title>أسواق الباشاوات - نظام نقاط البيع وإدارة الديون</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.html"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #16a34a;
-            --danger-color: #dc2626;
-            --warning-color: #ca8a04;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-color: #1e293b;
-            --border-color: #e2e8f0;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-        }
-
-        /* شريط تنبيه حالة الاتصال بالإنترنت */
-        #network-status-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 8px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            z-index: 9999;
-            transition: all 0.3s ease;
-            display: none;
-        }
-        .net-offline { background-color: var(--danger-color); color: white; display: block !important; }
-        .net-online { background-color: var(--success-color); color: white; display: block !important; }
-
-        .container {
-            max-width: 1200px;
-            margin: 40px auto 20px auto;
-            padding: 20px;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        h1 { margin: 0; color: var(--primary-color); font-size: 24px; }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-        button:hover { opacity: 0.9; }
-
-        .badge {
-            background: var(--warning-color);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
+        body { font-family: 'Cairo', sans-serif; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 transition-colors duration-300" id="bodyTag">
 
-    <!-- شريط حالة الاتصال -->
-    <div id="network-status-bar">جاري التحقق من الاتصال...</div>
-
-    <div class="container">
-        <header>
-            <h1>أسواق سيف - نقاط البيع (POS)</h1>
-            <div>
-                <span id="sync-status-badge" class="badge">المزامنة: متصل</span>
-            </div>
-        </header>
-
-        <div class="dashboard-grid">
-            <div class="card">
-                <h3>إدارة المبيعات والفواتير</h3>
-                <p>قم بإتمام عمليات البيع. إذا انقطع الإنترنت، سيتم حفظ العمليات في طابور الانتظار ومزامنتها تلقائياً عند عودة الاتصال.</p>
-                <button onclick="createNewSale()">إصدار فاتورة جديدة</button>
-            </div>
-
-            <div class="card">
-                <h3>حالة العمليات المعلقة</h3>
-                <p>العمليات بانتظار المزامنة: <span id="queue-count">0</span></p>
-                <button onclick="forceSync()" style="background-color: var(--success-color);">مزامنة يدوية الآن</button>
-            </div>
+    <!-- شريط حالة الاتصال والعمليات المعلقة -->
+    <div id="connectivityBanner" class="bg-amber-500 text-white px-4 py-2 text-sm flex justify-between items-center shadow-md hidden">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
+            <span id="connectionStatusText">أنت تعمل حالياً بدون إنترنت. يتم حفظ العمليات محلياً.</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="offlineQueueCount" class="bg-black bg-opacity-20 px-2 py-0.5 rounded-full text-xs">عمليات معلقة: 0</span>
+            <button onclick="syncOfflineQueue()" id="syncBtn" class="bg-white text-amber-600 px-3 py-1 rounded text-xs font-bold hover:bg-gray-100 transition">مزامنة الآن</button>
         </div>
     </div>
 
-    <!-- سكربت النظام مع محرك المزامنة الذكية -->
+    <!-- حاوية التطبيق الرئيسية -->
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-cash-register ml-2"></i> أسواق الباشاوات</h1>
+            <div class="flex items-center gap-4">
+                <span id="networkBadge" class="bg-green-500 text-white text-xs px-2.5 py-1 rounded-full"><i class="fa-solid fa-wifi ml-1"></i> متصل</span>
+                <button onclick="toggleDarkMode()" class="bg-blue-700 px-3 py-1.5 rounded hover:bg-blue-800 transition"><i class="fa-solid fa-moon"></i></button>
+            </div>
+        </header>
+
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- قسم المبيعات السريعة -->
+                <div class="bg-white p-5 rounded-xl shadow-md md:col-span-2">
+                    <h2 class="text-lg font-bold mb-4 text-blue-600"><i class="fa-solid fa-cart-shopping ml-2"></i> نقطة البيع (POS)</h2>
+                    <div class="mb-4">
+                        <input type="text" id="productSearch" placeholder="ابحث عن المادة أو ائشط الباركود..." class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="border rounded-lg p-4 h-64 overflow-y-auto mb-4 bg-gray-50" id="cartItemsList">
+                        <p class="text-gray-400 text-center mt-20">السلة فارغة حالياً...</p>
+                    </div>
+                    <div class="flex justify-between items-center font-bold text-xl mb-4">
+                        <span>الإجمالي الكلي:</span>
+                        <span id="cartTotal" class="text-blue-600">0 د.ع</span>
+                    </div>
+                    <button onclick="checkoutOrder()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow">إتمام الفيش/البيع</button>
+                </div>
+
+                <!-- لوحة المعلومات والتحكم -->
+                <div class="bg-white p-5 rounded-xl shadow-md flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold mb-4 text-blue-600"><i class="fa-solid fa-chart-pie ml-2"></i> لوحة التحكم</h2>
+                        <div class="space-y-3">
+                            <div class="bg-blue-50 p-3 rounded-lg flex justify-between items-center">
+                                <span class="text-sm font-semibold">مبيعات اليوم</span>
+                                <span id="todaySales" class="font-bold text-blue-600">0 د.ع</span>
+                            </div>
+                            <div class="bg-amber-50 p-3 rounded-lg flex justify-between items-center">
+                                <span class="text-sm font-semibold">ديون الزبائن</span>
+                                <span id="totalDebts" class="font-bold text-amber-600">0 د.ع</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button onclick="exportBackup()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition mb-2"><i class="fa-solid fa-download ml-1"></i> نسخة احتياطية (JSON)</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- سكود JavaScript المطور لإدارة الاتصال و Offline Queue -->
     <script>
-        const STORAGE_KEY = 'al_bashawat_market_db';
-        const QUEUE_KEY = 'al_bashawat_offline_queue';
+        // المتغيرات العامة وحالة الاتصال
+        let isOnline = navigator.onLine;
+        let offlineQueue = JSON.parse(localStorage.getItem('bashawat_offline_queue')) || [];
 
-        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { sales: [], inventory: [] };
-        let offlineQueue = JSON.parse(localStorage.getItem(QUEUE_KEY)) || [];
+        window.addEventListener('load', () => {
+            updateNetworkStatus();
+            updateQueueUI();
+        });
 
-        // تحديث عداد العمليات المعلقة في الواجهة
-        function updateQueueUI() {
-            document.getElementById('queue-count').innerText = offlineQueue.length;
-        }
-
-        // مراقبة حالة الإنترنت
+        // مراقبة مستشعرات الاتصال بالإنترنت
         window.addEventListener('online', () => {
-            showNetworkStatus('تم استعادة الاتصال بالإنترنت. جاري مزامنة العمليات المعلقة...', 'online');
-            processOfflineQueue();
+            isOnline = true;
+            updateNetworkStatus();
+            showNotification('تم استعادة الاتصال بالإنترنت! جاري مزامنة العمليات المعلقة...', 'success');
+            syncOfflineQueue();
         });
 
         window.addEventListener('offline', () => {
-            showNetworkStatus('انقطع الاتصال بالإنترنت! يعمل النظام حالياً بنسخ الطوارئ والطابور المحلي.', 'offline');
+            isOnline = false;
+            updateNetworkStatus();
+            showNotification('انقطع الاتصال بالإنترنت. يتم حفظ العمليات محلياً.', 'warning');
         });
 
-        function showNetworkStatus(message, type) {
-            const bar = document.getElementById('network-status-bar');
-            bar.innerText = message;
-            bar.className = type === 'online' ? 'net-online' : 'net-offline';
+        function updateNetworkStatus() {
+            const banner = document.getElementById('connectivityBanner');
+            const badge = document.getElementById('networkBadge');
             
-            if (type === 'online') {
-                setTimeout(() => { bar.style.display = 'none'; }, 4000);
-            }
-        }
-
-        // محاكاة إنشاء عملية بيع جديدة
-        fnCreateSale = function createNewSale() {
-            const newSale = {
-                id: 'SALE_' + Date.now(),
-                date: new Date().toISOString(),
-                total: Math.floor(Math.random() * 50000) + 5000,
-                items: [{ name: 'مادة غذائية متنوعة', qty: 1 }]
-            };
-
-            appData.sales.push(newSale);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-
-            // فحص حالة الاتصال لإرسالها للسحابة أو إضافتها للطابور
-            if (navigator.onLine) {
-                syncTransactionToCloud(newSale);
+            if (isOnline) {
+                banner.classList.add('hidden');
+                badge.className = "bg-green-500 text-white text-xs px-2.5 py-1 rounded-full";
+                badge.innerHTML = '<i class="fa-solid fa-wifi ml-1"></i> متصل';
             } else {
-                offlineQueue.push(newSale);
-                localStorage.setItem(QUEUE_KEY, JSON.stringify(offlineQueue));
-                updateQueueUI();
-                alert('لا يوجد إنترنت! تم حفظ الفاتورة محلياً وسيتم مزامنتها تلقائياً عند عودة الاتصال.');
+                banner.classList.remove('hidden');
+                badge.className = "bg-amber-500 text-white text-xs px-2.5 py-1 rounded-full";
+                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation ml-1"></i> غير متصل (Offline)';
             }
-        };
-
-        // محاكاة إرسال البيانات للخادم أو Firebase
-        function syncTransactionToCloud(transaction) {
-            console.log('جاري إرسال العملية إلى السحابة...', transaction);
-            // محاكاة استجابة ناجحة من السحابة
-            setTimeout(() => {
-                document.getElementById('sync-status-badge').innerText = 'المزامنة: محدث';
-                setTimeout(() => { document.getElementById('sync-status-badge').innerText = 'المزامنة: متصل'; }, 2000);
-            }, 500);
         }
 
-        // معالجة طابور العمليات المعلقة فور عودة الإنترنت
-        function processOfflineQueue() {
-            if (offlineQueue.length === 0) return;
-
-            console.log('جاري مزامنة الطابور المعلق (' + offlineQueue.length + ' عملية)...');
-            
-            // إرسال جميع العمليات دفعة واحدة أو بالترتيب
-            while (offlineQueue.length > 0) {
-                const item = offlineQueue.shift();
-                syncTransactionToCloud(item);
-            }
-
-            localStorage.setItem(QUEUE_KEY, JSON.stringify(offlineQueue));
+        // إضافة عملية إلى طابور العمليات المعلقة
+        function pushToOfflineQueue(actionType, payload) {
+            const queueItem = {
+                id: Date.now(),
+                type: actionType,
+                data: payload,
+                timestamp: new Date().toISOString()
+            };
+            offlineQueue.push(queueItem);
+            localStorage.setItem('bashawat_offline_queue', JSON.stringify(offlineQueue));
             updateQueueUI();
-            alert('تمت مزامنة جميع العمليات المعلقة بنجاح مع السحابة!');
         }
 
-        // مزامنة يدوية
-        function forceSync() {
-            if (!navigator.onLine) {
-                alert('عذراً، لا يوجد اتصال بالإنترنت حالياً لإتمام المزامنة.');
+        function updateQueueUI() {
+            const countSpan = document.getElementById('offlineQueueCount');
+            countSpan.innerText = `عمليات معلقة: ${offlineQueue.length}`;
+            if (offlineQueue.length > 0) {
+                document.getElementById('connectivityBanner').classList.remove('hidden');
+            }
+        }
+
+        // محاكاة مزامنة العمليات المعلقة فور عودة الإنترنت
+        function syncOfflineQueue() {
+            if (!isOnline) {
+                alert('لا يوجد اتصال بالإنترنت لإتمام المزامنة حالياً.');
                 return;
             }
-            processOfflineQueue();
-            alert('تم التحقق ومزامنة كافة البيانات بنجاح.');
+            if (offlineQueue.length === 0) {
+                alert('لا توجد عمليات معلقة للمزامنة.');
+                return;
+            }
+
+            const syncBtn = document.getElementById('syncBtn');
+            syncBtn.innerText = 'جاري المزامنة...';
+            syncBtn.disabled = true;
+
+            setTimeout(() => {
+                // محاكاة إرسال البيانات بنجاح لـ Firebase أو السيرفر
+                console.log("تمت مزامنة العمليات التالية بنجاح:", offlineQueue);
+                offlineQueue = [];
+                localStorage.removeItem('bashawat_offline_queue');
+                updateQueueUI();
+                
+                syncBtn.innerText = 'مزامنة الآن';
+                syncBtn.disabled = false;
+                showNotification('تمت مزامنة كافة العمليات المعلقة مع السحابة بنجاح!', 'success');
+            }, 1500);
         }
 
-        // التحقق الأولي عند التحميل
-        window.onload = function() {
-            updateQueueUI();
-            if (!navigator.onLine) {
-                showNetworkStatus('الجهاز يعمل حالياً بدون إنترنت (وضع الطوارئ)', 'offline');
+        function checkoutOrder() {
+            const orderData = { items: [], total: 15000, date: new Date().toISOString() };
+            
+            if (isOnline) {
+                // إرسال مباشر للسحابة
+                console.log("إرسال الفاتورة مباشرة للسيفر...", orderData);
+                showNotification('تم إتمام البيع وحفظ الفاتورة بنجاح!', 'success');
+            } else {
+                // حفظ محلي في طابور العمليات المعلقة لعدم توفر إنترنت
+                pushToOfflineQueue('NEW_SALE', orderData);
+                showNotification('تم حفظ الفاتورة محلياً (Offline Queue)، ستتم مزامنتها عند عودة الإنترنت.', 'warning');
             }
-        };
+        }
+
+        function showNotification(message, type) {
+            // دالة بسيطة للإشعارات
+            alert(message);
+        }
+
+        function toggleDarkMode() {
+            document.getElementById('bodyTag').classList.toggle('bg-gray-900');
+            document.getElementById('bodyTag').classList.toggle('text-gray-100');
+        }
+
+        function exportBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(offlineQueue));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "bashawat_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
     </script>
 </body>
 </html>
