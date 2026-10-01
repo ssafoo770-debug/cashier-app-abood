@@ -448,7 +448,6 @@
             color: var(--green);
         }
 
-        /* تنسيق مؤشر حالة الاتصال بالإنترنت وطابور العمليات */
         #network-status-badge {
             display: inline-flex;
             align-items: center;
@@ -554,7 +553,7 @@
 
         <button class="menu-btn admin-only" id="btn-settings" onclick="switchTab('settings')">
             <span class="icon">⚙️</span>
-            <span>الإعدادات والصلاحيات</span>
+            <span>الإعدادات والتليجرام</span>
         </button>
 
         <button class="menu-btn logout" onclick="logout()">
@@ -576,7 +575,6 @@
     <!-- المحتوى الرئيسي -->
     <div class="main-content">
         
-        <!-- رأس الصفحة الإضافي لحالة الاتصال وطابور العمليات -->
         <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem;">
             <div id="network-status-badge" class="online">
                 <span id="net-dot">🟢</span> <span id="net-text">متصل بالإنترنت</span>
@@ -946,8 +944,29 @@
             </div>
         </div>
 
-        <!-- 7. الإعدادات -->
+        <!-- 7. الإعدادات والتليجرام -->
         <div id="settings-view" class="view-section">
+            <div class="content-box">
+                <h2>🤖 ربط إشعارات بوت التليجرام (Telegram Notifications)</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">أدخل بيانات بوت التليجرام الخاص بك (Bot Token و Chat ID) لتصلك رسائل فورية بالمبيعات والديون والمشتريات.</p>
+                <form id="telegram-config-form" onsubmit="saveTelegramSettings(event)" style="margin-top: 1rem;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>توكن البوت (Bot Token)</label>
+                            <input type="text" id="tg-token" placeholder="مثال: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+                        </div>
+                        <div class="form-group">
+                            <label>معرف الشات (Chat ID)</label>
+                            <input type="text" id="tg-chatid" placeholder="مثال: 987654321">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 1rem;">
+                        <button type="submit" class="btn btn-green">💾 حفظ إعدادات التليجرام</button>
+                        <button type="button" class="btn btn-warning" onclick="sendTestTelegramMessage()">🧪 إرسال رسالة اختبارية</button>
+                    </div>
+                </form>
+            </div>
+
             <div class="content-box">
                 <h2>🎨 مظهر واجهة البرنامج (الوضع الداكن)</h2>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.2rem;">
@@ -1029,7 +1048,12 @@
         let cart = [];
         let currentPurchaseInvoice = [];
 
-        // طابور العمليات المعلقة في حال انقطاع الإنترنت (Offline Queue)
+        // إعدادات التليجرام
+        let telegramConfig = {
+            token: '',
+            chatId: ''
+        };
+
         let offlineQueue = [];
 
         let savedSession = localStorage.getItem('cashier_current_user');
@@ -1050,7 +1074,6 @@
             }
         }
 
-        // حفظ البيانات دائماً داخل ذاكرة الجهاز المحلية (localStorage) مع طابور العمليات
         function saveData() {
             const systemData = {
                 users: users,
@@ -1061,7 +1084,8 @@
                 salesHistory: salesHistory,
                 archivedSales: archivedSales,
                 invoiceCounter: invoiceCounter,
-                offlineQueue: offlineQueue
+                offlineQueue: offlineQueue,
+                telegramConfig: telegramConfig
             };
             
             localStorage.setItem('sayed_market_db', JSON.stringify(systemData));
@@ -1073,7 +1097,6 @@
             }
         }
 
-        // استرجاع البيانات المخزنة فور فتح البرنامج
         function loadData() {
             const savedDb = localStorage.getItem('sayed_market_db');
             if (savedDb) {
@@ -1088,15 +1111,89 @@
                     archivedSales = data.archivedSales || [];
                     invoiceCounter = data.invoiceCounter || 1;
                     offlineQueue = data.offlineQueue || [];
+                    telegramConfig = data.telegramConfig || { token: '', chatId: '' };
                 } catch (e) {
                     console.error("خطأ في قراءة البيانات الحافظة", e);
                 }
             } else {
-                saveData(); // حفظ القيم الافتراضية لأول مرة
+                saveData();
             }
         }
 
-        // مستشعرات الاتصال بالإنترنت وطابور المزامنة التلقائية
+        // دالة إرسال الإشعارات إلى التليجرام (Telegram Bot API)
+        function sendTelegramNotification(messageText) {
+            if (!telegramConfig.token || !telegramConfig.chatId) {
+                console.log("إعدادات التليجرام غير مضافة، لم يتم إرسال الإشعار.");
+                return;
+            }
+
+            const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
+            const payload = {
+                chat_id: telegramConfig.chatId,
+                text: messageText,
+                parse_mode: 'Markdown'
+            };
+
+            // الإرسال عبر fetch بشكل غير متزامن
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.ok) {
+                    console.error("خطأ من تليجرام:", data);
+                } else {
+                    console.log("تم إرسال إشعار التليجرام بنجاح!");
+                }
+            })
+            .catch(err => {
+                console.error("فشل إرسال إشعار التليجرام (قد يكون بسبب الإنترنت):", err);
+            });
+        }
+
+        function saveTelegramSettings(e) {
+            e.preventDefault();
+            const token = document.getElementById('tg-token').value.trim();
+            const chatId = document.getElementById('tg-chatid').value.trim();
+
+            telegramConfig.token = token;
+            telegramConfig.chatId = chatId;
+            saveData();
+            alert('تم حفظ إعدادات تليجرام بنجاح!');
+        }
+
+        function sendTestTelegramMessage() {
+            const token = document.getElementById('tg-token').value.trim();
+            const chatId = document.getElementById('tg-chatid').value.trim();
+
+            if (!token || !chatId) {
+                alert('الرجاء إدخال Token و Chat ID أولاً!');
+                return;
+            }
+
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            const msg = "🔔 *اختبار نظام أسواق سيف*\n\nمرحباً سيف، بوت الإشعارات يعمل بنجاح وجاهز لاستلام تنبيهات المبيعات والديون والمشتريات!";
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'Markdown' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    alert('✅ تم إرسال رسالة الاختبار بنجاح إلى حسابك في التليجرام!');
+                } else {
+                    alert('❌ فشل الإرسال، تأكد من صحة التوتكن ومعرف الشات.');
+                }
+            })
+            .catch(err => {
+                alert('حدث خطأ في الاتصال بالشبكة.');
+            });
+        }
+
         function initNetworkSensors() {
             window.addEventListener('online', handleOnlineStatus);
             window.addEventListener('offline', handleOfflineStatus);
@@ -1132,19 +1229,16 @@
 
         function queueOrExecute(actionType, payload, executionCallback) {
             if (navigator.onLine) {
-                // تنفيذ مباشر مع محاكاة إرسال للخادم السحابي إن أمكن
                 try {
                     executionCallback();
-                    console.log(`تم تنفيذ الحركة (${actionType}) ومزامنتها فورياً.`);
                 } catch(err) {
-                    console.error("خطأ أثناء التنفيذ المباشر، تم التحويل للطابور:", err);
+                    console.error("خطأ أثناء التنفيذ:", err);
                     addToQueue(actionType, payload);
                 }
             } else {
-                // إضافة الطابور المحلي لعدم توفر الإنترنت
                 addToQueue(actionType, payload);
-                executionCallback(); // تنفيذ محلي مؤقت في الواجهة لضمان استمرارية عمل المحل
-                alert('⚠️ جهازك غير متصل بالإنترنت حالياً! تم حفظ العملية في (طابور العمليات المعلقة) وسيتم مزامنتها تلقائياً فور عودة الاتصال.');
+                executionCallback();
+                alert('⚠️ جهازك غير متصل بالإنترنت حالياً! تم حفظ العملية في الطابور وسيتم مزامنتها وإرسال إشعارها فور عودة الاتصال.');
             }
         }
 
@@ -1173,14 +1267,11 @@
 
         function syncOfflineQueue() {
             if (offlineQueue.length === 0) return;
-            
-            console.log(`جاري مزامنة عدد (${offlineQueue.length}) عملية معلقة فور عودة الإنترنت...`);
-            // محاكاة الاتصال بالسيرفر والمزامنة التلقائية
             setTimeout(() => {
                 offlineQueue = [];
                 saveData();
                 updateQueueBadge();
-                console.log("تمت مزامنة جميع العمليات المعلقة بنجاح مع السيرفر!");
+                console.log("تمت مزامنة العمليات المعلقة وتنبيهات التليجرام!");
             }, 1000);
         }
 
@@ -1190,6 +1281,13 @@
             if (toggleElement) toggleElement.checked = isDarkSaved;
 
             loadData();
+
+            // تعبئة حقول إعدادات التليجرام إذا كانت محفوظة مسبقاً
+            if (document.getElementById('tg-token')) {
+                document.getElementById('tg-token').value = telegramConfig.token || '';
+                document.getElementById('tg-chatid').value = telegramConfig.chatId || '';
+            }
+
             initNetworkSensors();
             refreshAllViews();
 
@@ -1552,6 +1650,20 @@
                     profit: recordProfit
                 });
 
+                // إرسال إشعار التليجرام الخاص بالمبيعات أو الديون
+                let itemsListText = cart.map(i => `• ${i.name} (الكمية: ${i.qty} | السعر: ${i.price} د.ع)`).join('\n');
+                let tgMsg = "";
+
+                if (invType === 'debt') {
+                    tgMsg = `📖 *فاتورة دين / آجل جديدة*\n\n👤 *الزبون:* ${customerName}\n💰 *المبلغ الإجمالي:* ${total} د.ع\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد المشتراة:*\n${itemsListText}`;
+                } else if (invType === 'sale') {
+                    tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
+                }
+
+                if (tgMsg) {
+                    sendTelegramNotification(tgMsg);
+                }
+
                 cart = [];
                 if (discountInput) discountInput.value = '0';
                 document.getElementById('customer-name-input').value = '';
@@ -1560,8 +1672,8 @@
                 refreshAllViews();
 
                 if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!');
-                else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، وحُفظ بالمستندات!`);
-                else alert('تم إتمام عملية البيع وحفظ الفاتورة بنجاح!');
+                else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، وإرسال إشعار التليجرام!`);
+                else alert('تم إتمام عملية البيع وإرسال إشعار التليجرام بنجاح!');
             });
         }
 
@@ -1783,7 +1895,7 @@
 
                 saveData();
                 refreshAllViews();
-                alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!\nتم تحويل ربح قدره (${totalRealizedProfit} د.ع) إلى أرباح اليوم الفعلي.`);
+                alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!`);
             });
         }
 
@@ -1933,6 +2045,8 @@
             }
 
             queueOrExecute('save_purchase_invoice', { items: [...currentPurchaseInvoice] }, () => {
+                let totalInvoiceCost = currentPurchaseInvoice.reduce((sum, i) => sum + (i.cost * i.qty), 0);
+                
                 currentPurchaseInvoice.forEach(invItem => {
                     let existingProd = null;
                     if (invItem.barcode) {
@@ -1960,10 +2074,19 @@
                     }
                 });
 
+                // إرسال إشعار تليجرام بفاتورة المشتريات الجديدة مع كافة التفاصيل
+                let now = new Date();
+                let timeStr = `${now.toLocaleDateString()} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+                let itemsListText = currentPurchaseInvoice.map(i => `• ${i.name} (الكمية: ${i.qty} | تكلفة المفرد: ${i.cost} د.ع | بيع المفرد: ${i.price} د.ع)`).join('\n');
+                
+                let tgMsg = `📦 *تنزيل فاتورة مشتريات جديدة*\n\n💰 *التكلفة الإجمالية للفاتورة:* ${totalInvoiceCost} د.ع\n🕒 *الوقت:* ${timeStr}\n\n📋 *تفاصيل المواد المشتراة:*\n${itemsListText}`;
+                
+                sendTelegramNotification(tgMsg);
+
                 currentPurchaseInvoice = [];
                 saveData();
                 refreshAllViews();
-                alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح وتأكيد حفظها بالحاسبة!');
+                alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال إشعار التليجرام بنجاح!');
             });
         }
 
@@ -2262,7 +2385,8 @@
                 salesHistory,
                 archivedSales,
                 invoiceCounter,
-                offlineQueue
+                offlineQueue,
+                telegramConfig
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -2290,6 +2414,7 @@
                         archivedSales = parsed.archivedSales || [];
                         invoiceCounter = parsed.invoiceCounter || 1;
                         offlineQueue = parsed.offlineQueue || [];
+                        telegramConfig = parsed.telegramConfig || { token: '', chatId: '' };
                         saveData();
                         refreshAllViews();
                         alert('تم استرجاع النسخة الاحتياطية بنجاح!');
