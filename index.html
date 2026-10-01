@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل ونظام الديون</title>
+    <title>أسواق القيسي - نظام الكاشير المتكامل ونظام الديون (متزامن سحابياً)</title>
+    <!-- مكتبات Firebase السحابية -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary: #0f172a;
@@ -454,7 +457,7 @@
     <div id="login-overlay">
         <div class="login-card">
             <h2 style="margin-bottom: 0.5rem; color: var(--accent);">🔐 تسجيل الدخول</h2>
-            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام حفظ تلقائي ودائم على الجهاز</p>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام مزامنة سحابية فورية (Firebase)</p>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label>اسم المستخدم</label>
@@ -500,7 +503,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <span class="icon">🛒</span>
-            <h2>أسواق سيف</h2>
+            <h2>أسواق القيسي</h2>
         </div>
 
         <div class="user-badge">
@@ -988,6 +991,23 @@
     </div>
 
     <script>
+        // إعدادات الاتصال بقاعدة بيانات Firebase (ضع معلومات مشروعك المجاني هنا)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // تهيئة Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
         // المتغيرات الأساسية
         let users = [
             { username: 'admin', password: '123', role: 'admin' },
@@ -1023,7 +1043,7 @@
             }
         }
 
-        // حفظ البيانات دائماً داخل ذاكرة الجهاز المحلية (localStorage)
+        // حفظ البيانات في Firebase (وكذلك محلياً للسرعة)
         function saveData() {
             const systemData = {
                 users: users,
@@ -1036,7 +1056,11 @@
                 invoiceCounter: invoiceCounter
             };
             
-            localStorage.setItem('sayed_market_db', JSON.stringify(systemData));
+            // رفع البيانات سحابياً
+            db.ref('market_data').set(systemData).catch(err => console.error("خطأ في المزامنة السحابية:", err));
+            
+            // تخزين محلي للاحتياط
+            localStorage.setItem('al_qaisi_market_db', JSON.stringify(systemData));
 
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
@@ -1045,9 +1069,33 @@
             }
         }
 
-        // استرجاع البيانات المخزنة فور فتح البرنامج
+        // جلب واستماع البيانات بشكل فوري من Firebase
         function loadData() {
-            const savedDb = localStorage.getItem('sayed_market_db');
+            db.ref('market_data').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    users = data.users || users;
+                    warehouseItems = data.warehouseItems || [];
+                    products = data.products || [];
+                    debts = data.debts || [];
+                    debtPayments = data.debtPayments || [];
+                    salesHistory = data.salesHistory || [];
+                    archivedSales = data.archivedSales || [];
+                    invoiceCounter = data.invoiceCounter || 1;
+                    
+                    refreshAllViews();
+                } else {
+                    // إذا كانت القاعدة فارغة أول مرة، نرفع البيانات الافتراضية
+                    saveData();
+                }
+            }, (error) => {
+                console.error("فشل الاتصال بقاعدة البيانات السحابية، جارٍ استخدام التخزين المحلي:", error);
+                loadLocalFallback();
+            });
+        }
+
+        function loadLocalFallback() {
+            let savedDb = localStorage.getItem('al_qaisi_market_db') || localStorage.getItem('sayed_market_db');
             if (savedDb) {
                 try {
                     const data = JSON.parse(savedDb);
@@ -1060,11 +1108,10 @@
                     archivedSales = data.archivedSales || [];
                     invoiceCounter = data.invoiceCounter || 1;
                 } catch (e) {
-                    console.error("خطأ في قراءة البيانات الحافظة", e);
+                    console.error("خطأ في قراءة البيانات المحلية", e);
                 }
-            } else {
-                saveData(); // حفظ القيم الافتراضية لأول مرة
             }
+            refreshAllViews();
         }
 
         window.onload = function() {
@@ -1073,7 +1120,6 @@
             if (toggleElement) toggleElement.checked = isDarkSaved;
 
             loadData();
-            refreshAllViews();
 
             if (currentUser) {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -1440,7 +1486,7 @@
             refreshAllViews();
 
             if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!');
-            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، وحُفظ بالمستندات!`);
+            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، وحُفظ بالسحابة!`);
             else alert('تم إتمام عملية البيع وحفظ الفاتورة بنجاح!');
         }
 
@@ -1835,7 +1881,7 @@
             currentPurchaseInvoice = [];
             saveData();
             refreshAllViews();
-            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع إلى المحل بنجاح وتأكيد حفظها بالحاسبة!');
+            alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال البضائع للسحابة بنجاح!');
         }
 
         function renderPurchasesLogTable() {
@@ -2137,7 +2183,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "sayed_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            downloadAnchor.setAttribute("download", "al_qaisi_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
