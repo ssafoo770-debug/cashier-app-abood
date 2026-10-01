@@ -3,203 +3,519 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق الباشاوات - نظام نقاط البيع وإدارة الديون</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.html"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts (Cairo) -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>أسواق سيف - نظام نقطة البيع والديون</title>
     <style>
-        body { font-family: 'Cairo', sans-serif; }
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 10px; transition: 0.3s; }
+        header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h1 { font-size: 1.4rem; color: var(--primary); }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        button { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); }
+        
+        /* مؤشر حالة الاتصال والطابور */
+        .network-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .online { background: #dcfce7; color: #166534; }
+        .offline { background: #fee2e2; color: #991b1b; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .online .dot { background: var(--success); }
+        .offline .dot { background: var(--danger); }
+        
+        .queue-notice {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #f59e0b;
+        }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .section { display: none; background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .section.active { display: block; }
+        
+        input, select, textarea { width: 100%; padding: 8px; margin: 5px 0 12px 0; border: 1px solid var(--border); border-radius: 5px; background: var(--card-bg); color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: right; font-size: 0.9rem; }
+        th { background: rgba(0,0,0,0.05); }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        .stats-card { background: rgba(37, 99, 235, 0.1); padding: 15px; border-radius: 6px; text-align: center; }
+        .stats-card h3 { font-size: 1.1rem; margin-bottom: 5px; }
+        .stats-card p { font-size: 1.4rem; font-weight: bold; color: var(--primary); }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 transition-colors duration-300" id="bodyTag">
+<body data-theme="light">
 
-    <!-- شريط حالة الاتصال والعمليات المعلقة -->
-    <div id="connectivityBanner" class="bg-amber-500 text-white px-4 py-2 text-sm flex justify-between items-center shadow-md hidden">
-        <div class="flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
-            <span id="connectionStatusText">أنت تعمل حالياً بدون إنترنت. يتم حفظ العمليات محلياً.</span>
+    <header>
+        <h1>أسواق سيف (نظام POS المطور)</h1>
+        <div class="controls">
+            <div id="netStatus" class="network-badge online">
+                <span class="dot"></span> <span id="netText">متصل بالإنترنت</span>
+            </div>
+            <button onclick="toggleTheme()" class="btn-warning">🌙 النمط</button>
         </div>
-        <div class="flex items-center gap-3">
-            <span id="offlineQueueCount" class="bg-black bg-opacity-20 px-2 py-0.5 rounded-full text-xs">عمليات معلقة: 0</span>
-            <button onclick="syncOfflineQueue()" id="syncBtn" class="bg-white text-amber-600 px-3 py-1 rounded text-xs font-bold hover:bg-gray-100 transition">مزامنة الآن</button>
+    </header>
+
+    <!-- إشعار العمليات المعلقة في الطابور -->
+    <div id="queueNotice" class="queue-notice" style="display: none;">
+        <span>⚠️ يوجد <strong id="queueCount">0</strong> عملية معلقة في طابور الانتظار (سيتم مزامنتها تلقائياً عند عودة الإنترنت).</span>
+        <button onclick="processQueue()" style="padding: 4px 10px; font-size: 0.8rem;">مزامنة الآن</button>
+    </div>
+
+    <!-- أزرار التنقل بين الأقسام -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('pos', event)">نقطة البيع (POS)</button>
+        <button class="tab-btn" onclick="switchTab('debts', event)">الديون والزبائن</button>
+        <button class="tab-btn" onclick="switchTab('inventory', event)">المخزن والمحلات</button>
+        <button class="tab-btn" onclick="switchTab('purchases', event)">المشتريات</button>
+        <button class="tab-btn" onclick="switchTab('reports', event)">التقارير</button>
+    </div>
+
+    <!-- 1. قسم نقطة البيع -->
+    <div id="pos" class="section active">
+        <h2>نقطة البيع السريعة</h2>
+        <div class="grid-2">
+            <div>
+                <label>اختر المادة:</label>
+                <select id="posItemSelect" onchange="updatePosItemInfo()"></select>
+                <label>الكمية:</label>
+                <input type="number" id="posQty" value="1" min="1">
+                <button class="btn-success" onclick="addToCart()">إضافة إلى الفاتورة</button>
+            </div>
+            <div>
+                <h3>محتويات الفاتورة</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المادة</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>إجمالي</th>
+                            <th>حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartTableBody"></tbody>
+                </table>
+                <h3 style="margin-top: 10px;">الإجمالي الكلي: <span id="cartTotal">0</span> د.ع</h3>
+                <label>نوع البيع:</label>
+                <select id="saleType" onchange="toggleCustomerSelect()">
+                    <option value="cash">نقدي</option>
+                    <option value="debt">آجل (على ديون الزبون)</option>
+                </select>
+                <div id="customerDiv" style="display: none;">
+                    <label>اختر الزبون:</label>
+                    <select id="posCustomerSelect"></select>
+                </div>
+                <button class="btn-success" style="width: 100%; margin-top: 10px;" onclick="checkout()">إتمام البيع وحفظ الفاتورة</button>
+            </div>
         </div>
     </div>
 
-    <!-- حاوية التطبيق الرئيسية -->
-    <div class="min-h-screen flex flex-col">
-        <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
-            <h1 class="text-xl font-bold"><i class="fa-solid fa-cash-register ml-2"></i> أسواق الباشاوات</h1>
-            <div class="flex items-center gap-4">
-                <span id="networkBadge" class="bg-green-500 text-white text-xs px-2.5 py-1 rounded-full"><i class="fa-solid fa-wifi ml-1"></i> متصل</span>
-                <button onclick="toggleDarkMode()" class="bg-blue-700 px-3 py-1.5 rounded hover:bg-blue-800 transition"><i class="fa-solid fa-moon"></i></button>
+    <!-- 2. قسم الديون والزبائن -->
+    <div id="debts" class="section">
+        <h2>إدارة الديون والزبائن</h2>
+        <div class="grid-2">
+            <div>
+                <h3>إضافة زبون جديد</h3>
+                <label>اسم الزبون:</label>
+                <input type="text" id="newCustomerName">
+                <label>رقم الهاتف:</label>
+                <input type="text" id="newCustomerPhone">
+                <button onclick="addCustomer()">حفظ الزبون</button>
             </div>
-        </header>
-
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- قسم المبيعات السريعة -->
-                <div class="bg-white p-5 rounded-xl shadow-md md:col-span-2">
-                    <h2 class="text-lg font-bold mb-4 text-blue-600"><i class="fa-solid fa-cart-shopping ml-2"></i> نقطة البيع (POS)</h2>
-                    <div class="mb-4">
-                        <input type="text" id="productSearch" placeholder="ابحث عن المادة أو ائشط الباركود..." class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="border rounded-lg p-4 h-64 overflow-y-auto mb-4 bg-gray-50" id="cartItemsList">
-                        <p class="text-gray-400 text-center mt-20">السلة فارغة حالياً...</p>
-                    </div>
-                    <div class="flex justify-between items-center font-bold text-xl mb-4">
-                        <span>الإجمالي الكلي:</span>
-                        <span id="cartTotal" class="text-blue-600">0 د.ع</span>
-                    </div>
-                    <button onclick="checkoutOrder()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow">إتمام الفيش/البيع</button>
-                </div>
-
-                <!-- لوحة المعلومات والتحكم -->
-                <div class="bg-white p-5 rounded-xl shadow-md flex flex-col justify-between">
-                    <div>
-                        <h2 class="text-lg font-bold mb-4 text-blue-600"><i class="fa-solid fa-chart-pie ml-2"></i> لوحة التحكم</h2>
-                        <div class="space-y-3">
-                            <div class="bg-blue-50 p-3 rounded-lg flex justify-between items-center">
-                                <span class="text-sm font-semibold">مبيعات اليوم</span>
-                                <span id="todaySales" class="font-bold text-blue-600">0 د.ع</span>
-                            </div>
-                            <div class="bg-amber-50 p-3 rounded-lg flex justify-between items-center">
-                                <span class="text-sm font-semibold">ديون الزبائن</span>
-                                <span id="totalDebts" class="font-bold text-amber-600">0 د.ع</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-6">
-                        <button onclick="exportBackup()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition mb-2"><i class="fa-solid fa-download ml-1"></i> نسخة احتياطية (JSON)</button>
-                    </div>
-                </div>
+            <div>
+                <h3>قائمة الزبائن والديون</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الهاتف</th>
+                            <th>الدين المترتب</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTableBody"></tbody>
+                </table>
             </div>
-        </main>
+        </div>
     </div>
 
-    <!-- سكود JavaScript المطور لإدارة الاتصال و Offline Queue -->
+    <!-- 3. قسم المخزن -->
+    <div id="inventory" class="section">
+        <h2>إدارة المخزن والمحلات</h2>
+        <label>اسم المادة:</label>
+        <input type="text" id="itemName">
+        <div class="grid-2">
+            <div>
+                <label>الكمية في المخزن:</label>
+                <input type="number" id="itemStock" value="0">
+            </div>
+            <div>
+                <label>سعر البيع للمفرد:</label>
+                <input type="number" id="itemPrice" value="0">
+            </div>
+        </div>
+        <button class="btn-success" onclick="addItem()">إضافة مادة جديدة</button>
+        <h3 style="margin-top: 20px;">المواد المتوفرة</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>المادة</th>
+                    <th>الكمية المتاحة</th>
+                    <th>سعر البيع</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 4. قسم المشتريات -->
+    <div id="purchases" class="section">
+        <h2>سجل المشتريات وإدخال البضائع</h2>
+        <label>اختر المادة المراد توريدها:</label>
+        <select id="purchaseItemSelect"></select>
+        <label>الكمية المضافة:</label>
+        <input type="number" id="purchaseQty" value="1">
+        <label>سعر الشراء الإجمالي:</label>
+        <input type="number" id="purchaseCost" value="0">
+        <button class="btn-success" onclick="recordPurchase()">إثبات عملية الشراء وتحديث المخزن</button>
+    </div>
+
+    <!-- 5. التقارير -->
+    <div id="reports" class="section">
+        <h2>التقارير والأرباح</h2>
+        <div class="grid-2">
+            <div class="stats-card">
+                <h3>مبيعات اليوم</h3>
+                <p id="todaySales">0 د.ع</p>
+            </div>
+            <div class="stats-card">
+                <h3>إجمالي الديون المعلقة</h3>
+                <p id="totalDebtsReport">0 د.ع</p>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // المتغيرات العامة وحالة الاتصال
-        let isOnline = navigator.onLine;
-        let offlineQueue = JSON.parse(localStorage.getItem('bashawat_offline_queue')) || [];
+        // هيكل قاعدة البيانات المحلية وطابور العمليات (Offline Queue)
+        let db = JSON.parse(localStorage.getItem('saif_market_db')) || {
+            items: [],
+            customers: [],
+            sales: [],
+            purchases: []
+        };
 
+        // طابور العمليات المعلقة في حالة غير المتصل
+        let offlineQueue = JSON.parse(localStorage.getItem('saif_offline_queue')) || [];
+        let cart = [];
+
+        // تشغيل المراقبين عند تحميل الصفحة
         window.addEventListener('load', () => {
             updateNetworkStatus();
-            updateQueueUI();
+            refreshAllUI();
+            
+            // مراقبة أحداث الاتصال والانقطاع الحية
+            window.addEventListener('online', () => {
+                updateNetworkStatus();
+                processQueue(); // محاولة المزامنة التلقائية فور عودة الإنترنت
+            });
+            window.addEventListener('offline', () => {
+                updateNetworkStatus();
+            });
         });
 
-        // مراقبة مستشعرات الاتصال بالإنترنت
-        window.addEventListener('online', () => {
-            isOnline = true;
-            updateNetworkStatus();
-            showNotification('تم استعادة الاتصال بالإنترنت! جاري مزامنة العمليات المعلقة...', 'success');
-            syncOfflineQueue();
-        });
-
-        window.addEventListener('offline', () => {
-            isOnline = false;
-            updateNetworkStatus();
-            showNotification('انقطع الاتصال بالإنترنت. يتم حفظ العمليات محلياً.', 'warning');
-        });
-
+        // مراقب حالة الاتصال بالإنترنت
         function updateNetworkStatus() {
-            const banner = document.getElementById('connectivityBanner');
-            const badge = document.getElementById('networkBadge');
+            const statusBadge = document.getElementById('netStatus');
+            const statusText = document.getElementById('netText');
             
-            if (isOnline) {
-                banner.classList.add('hidden');
-                badge.className = "bg-green-500 text-white text-xs px-2.5 py-1 rounded-full";
-                badge.innerHTML = '<i class="fa-solid fa-wifi ml-1"></i> متصل';
+            if (navigator.onLine) {
+                statusBadge.className = 'network-badge online';
+                statusText.innerText = 'متصل بالإنترنت';
             } else {
-                banner.classList.remove('hidden');
-                badge.className = "bg-amber-500 text-white text-xs px-2.5 py-1 rounded-full";
-                badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation ml-1"></i> غير متصل (Offline)';
+                statusBadge.className = 'network-badge offline';
+                statusText.innerText = 'غير متصل (وضع Offline)';
             }
-        }
-
-        // إضافة عملية إلى طابور العمليات المعلقة
-        function pushToOfflineQueue(actionType, payload) {
-            const queueItem = {
-                id: Date.now(),
-                type: actionType,
-                data: payload,
-                timestamp: new Date().toISOString()
-            };
-            offlineQueue.push(queueItem);
-            localStorage.setItem('bashawat_offline_queue', JSON.stringify(offlineQueue));
             updateQueueUI();
         }
 
+        // تحديث عرض طابور العمليات المعلقة
         function updateQueueUI() {
-            const countSpan = document.getElementById('offlineQueueCount');
-            countSpan.innerText = `عمليات معلقة: ${offlineQueue.length}`;
-            if (offlineQueue.length > 0) {
-                document.getElementById('connectivityBanner').classList.remove('hidden');
-            }
-        }
-
-        // محاكاة مزامنة العمليات المعلقة فور عودة الإنترنت
-        function syncOfflineQueue() {
-            if (!isOnline) {
-                alert('لا يوجد اتصال بالإنترنت لإتمام المزامنة حالياً.');
-                return;
-            }
-            if (offlineQueue.length === 0) {
-                alert('لا توجد عمليات معلقة للمزامنة.');
-                return;
-            }
-
-            const syncBtn = document.getElementById('syncBtn');
-            syncBtn.innerText = 'جاري المزامنة...';
-            syncBtn.disabled = true;
-
-            setTimeout(() => {
-                // محاكاة إرسال البيانات بنجاح لـ Firebase أو السيرفر
-                console.log("تمت مزامنة العمليات التالية بنجاح:", offlineQueue);
-                offlineQueue = [];
-                localStorage.removeItem('bashawat_offline_queue');
-                updateQueueUI();
-                
-                syncBtn.innerText = 'مزامنة الآن';
-                syncBtn.disabled = false;
-                showNotification('تمت مزامنة كافة العمليات المعلقة مع السحابة بنجاح!', 'success');
-            }, 1500);
-        }
-
-        function checkoutOrder() {
-            const orderData = { items: [], total: 15000, date: new Date().toISOString() };
+            const notice = document.getElementById('queueNotice');
+            const countSpan = document.getElementById('queueCount');
             
-            if (isOnline) {
-                // إرسال مباشر للسحابة
-                console.log("إرسال الفاتورة مباشرة للسيفر...", orderData);
-                showNotification('تم إتمام البيع وحفظ الفاتورة بنجاح!', 'success');
+            if (offlineQueue.length > 0) {
+                notice.style.display = 'flex';
+                countSpan.innerText = offlineQueue.length;
             } else {
-                // حفظ محلي في طابور العمليات المعلقة لعدم توفر إنترنت
-                pushToOfflineQueue('NEW_SALE', orderData);
-                showNotification('تم حفظ الفاتورة محلياً (Offline Queue)، ستتم مزامنتها عند عودة الإنترنت.', 'warning');
+                notice.style.display = 'none';
+            }
+            localStorage.setItem('saif_offline_queue', JSON.stringify(offlineQueue));
+        }
+
+        // إضافة عملية إلى الطابور أو تنفيذها مباشرة
+        function dispatchOrQueueOperation(actionType, payload) {
+            if (navigator.onLine) {
+                // محاكاة إرسال للـ Server أو معالجة مباشرة
+                console.log(`إرسال مباشر للـ Server (${actionType}):`, payload);
+                executeActionLocally(actionType, payload);
+                alert('تم تنفيذ العملية ومزامنتها بنجاح!');
+            } else {
+                // حفظ العملية في طابور الانتظار المحلي
+                offlineQueue.push({ type: actionType, data: payload, timestamp: new Date().toISOString() });
+                updateQueueUI();
+                executeActionLocally(actionType, payload); // تنفيذ محلي مؤقت لتحديث الواجهة فوراً
+                alert('الإنترنت مقطوع! تم حفظ العملية في الطابور وسيتم مزامنتها تلقائياً فور عودته.');
             }
         }
 
-        function showNotification(message, type) {
-            // دالة بسيطة للإشعارات
-            alert(message);
+        // تنفيذ العمليات محلياً على الذاكرة
+        function executeActionLocally(type, data) {
+            if (type === 'NEW_SALE') {
+                db.sales.push(data);
+                // خصم الكميات من المخزن
+                data.items.forEach(cartItem => {
+                    let item = db.items.find(i => i.name === cartItem.name);
+                    if (item) item.stock -= cartItem.qty;
+                });
+                if (data.saleType === 'debt' && data.customerId) {
+                    let customer = db.customers.find(c => c.id == data.customerId);
+                    if (customer) customer.debt += data.total;
+                }
+            } else if (type === 'ADD_CUSTOMER') {
+                db.customers.push(data);
+            } else if (type === 'ADD_ITEM') {
+                db.items.push(data);
+            } else if (type === 'RECORD_PURCHASE') {
+                db.purchases.push(data);
+                let item = db.items.find(i => i.name === data.itemName);
+                if (item) item.stock += data.qty;
+            }
+            saveLocalDB();
+            refreshAllUI();
         }
 
-        function toggleDarkMode() {
-            document.getElementById('bodyTag').classList.toggle('bg-gray-900');
-            document.getElementById('bodyTag').classList.toggle('text-gray-100');
+        // نظام المزامنة التلقائية فور عودة الإنترنت
+        function processQueue() {
+            if (!navigator.onLine) {
+                alert('لا يوجد اتصال بالإنترنت حالياً لإتمام المزامنة.');
+                return;
+            }
+
+            if (offlineQueue.length === 0) return;
+
+            console.log('جاري مزامنة العمليات المعلقة مع السيرفر...', offlineQueue);
+            
+            // محاكاة رفع الطابور بنجاح للسيرفر
+            setTimeout(() => {
+                offlineQueue = []; // تفريغ الطابور بعد نجاح المزامنة
+                updateQueueUI();
+                alert('تمت مزامنة كافة العمليات المعلقة بنجاح مع السيرفر السحابي!');
+            }, 800);
         }
 
-        function exportBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(offlineQueue));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "bashawat_backup.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+        function saveLocalDB() {
+            localStorage.setItem('saif_market_db', JSON.stringify(db));
+        }
+
+        // التنقل بين الأقسام
+        function switchTab(tabId, event) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (event) event.target.classList.add('active');
+        }
+
+        // إدارة السلة ونقطة البيع
+        function addToCart() {
+            const select = document.getElementById('posItemSelect');
+            const itemName = select.value;
+            const qty = parseInt(document.getElementById('posQty').value);
+            
+            let item = db.items.find(i => i.name === itemName);
+            if (!item || item.stock < qty) {
+                alert('الكمية المطلوبة غير متوفرة في المخزن!');
+                return;
+            }
+
+            let existing = cart.find(c => c.name === itemName);
+            if (existing) {
+                existing.qty += qty;
+            } else {
+                cart.push({ name: itemName, qty: qty, price: item.price });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            let tbody = document.getElementById('cartTableBody');
+            tbody.innerHTML = '';
+            let total = 0;
+            cart.forEach((c, index) => {
+                let subTotal = c.qty * c.price;
+                total += subTotal;
+                tbody.innerHTML += `<tr>
+                    <td>${c.name}</td>
+                    <td>${c.qty}</td>
+                    <td>${c.price}</td>
+                    <td>${subTotal}</td>
+                    <td><button class="btn-danger" onclick="removeFromCart(${index})">حذف</button></td>
+                </tr>`;
+            });
+            document.getElementById('cartTotal').innerText = total;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function toggleCustomerSelect() {
+            let type = document.getElementById('saleType').value;
+            document.getElementById('customerDiv').style.display = (type === 'debt') ? 'block' : 'none';
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert('السلة فارغة!');
+                return;
+            }
+            let total = cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+            let saleType = document.getElementById('saleType').value;
+            let customerId = document.getElementById('posCustomerSelect').value;
+
+            let saleData = {
+                items: [...cart],
+                total: total,
+                saleType: saleType,
+                customerId: customerId,
+                date: new Date().toLocaleDateString()
+            };
+
+            dispatchOrQueueOperation('NEW_SALE', saleData);
+            cart = [];
+            renderCart();
+        }
+
+        // إدارة المواد والزبائن
+        function addItem() {
+            let name = document.getElementById('itemName').value;
+            let stock = parseInt(document.getElementById('itemStock').value);
+            let price = parseFloat(document.getElementById('itemPrice').value);
+            if (!name) { alert('يرجى ادخال اسم المادة'); return; }
+
+            dispatchOrQueueOperation('ADD_ITEM', { name, stock, price });
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemStock').value = '0';
+            document.getElementById('itemPrice').value = '0';
+        }
+
+        function addCustomer() {
+            let name = document.getElementById('newCustomerName').value;
+            let phone = document.getElementById('newCustomerPhone').value;
+            if (!name) { alert('يرجى إدخال اسم الزبون'); return; }
+
+            dispatchOrQueueOperation('ADD_CUSTOMER', { id: Date.now(), name, phone, debt: 0 });
+            document.getElementById('newCustomerName').value = '';
+            document.getElementById('newCustomerPhone').value = '';
+        }
+
+        function recordPurchase() {
+            let itemName = document.getElementById('purchaseItemSelect').value;
+            let qty = parseInt(document.getElementById('purchaseQty').value);
+            let cost = parseFloat(document.getElementById('purchaseCost').value);
+
+            dispatchOrQueueOperation('RECORD_PURCHASE', { itemName, qty, cost, date: new Date().toLocaleDateString() });
+            alert('تم تسجيل المشتريات وتحديث المخزن بنجاح.');
+        }
+
+        // تحديث واجهات العرض والـ Selects
+        function refreshAllUI() {
+            // تعبئة القوائم المنسدلة
+            let itemOpts = db.items.map(i => `<option value="${i.name}">${i.name} (متاح: ${i.stock})</option>`).join('');
+            document.getElementById('posItemSelect').innerHTML = itemOpts;
+            document.getElementById('purchaseItemSelect').innerHTML = itemOpts;
+
+            let custOpts = db.customers.map(c => `<option value="${c.id}">${c.name} (دين: ${c.debt})</option>`).join('');
+            document.getElementById('posCustomerSelect').innerHTML = custOpts;
+
+            // جدول المخزن
+            document.getElementById('inventoryTableBody').innerHTML = db.items.map(i => `
+                <tr><td>${i.name}</td><td>${i.stock}</td><td>${i.price} د.ع</td></tr>
+            `).join('');
+
+            // جدول الزبائن
+            document.getElementById('customersTableBody').innerHTML = db.customers.map(c => `
+                <tr><td>${c.name}</td><td>${c.phone || '-'}</td><td>${c.debt} د.ع</td><td><button onclick="payDebt(${c.id})">تسديد</button></td></tr>
+            `).join('');
+
+            // التقارير
+            let today = new Date().toLocaleDateString();
+            let todaySalesSum = db.sales.filter(s => s.date === today).reduce((sum, s) => sum + s.total, 0);
+            document.getElementById('todaySales').innerText = todaySalesSum + ' د.ع';
+
+            let totalDebtSum = db.customers.reduce((sum, c) => sum + c.debt, 0);
+            document.getElementById('totalDebtsReport').innerText = totalDebtSum + ' د.ع';
+            
+            updateQueueUI();
+        }
+
+        function payDebt(id) {
+            let amount = parseFloat(prompt('أدخل مبلغ التسديد:'));
+            if (amount > 0) {
+                let customer = db.customers.find(c => c.id === id);
+                if (customer) {
+                    customer.debt = Math.max(0, customer.debt - amount);
+                    saveLocalDB();
+                    refreshAllUI();
+                    alert('تم تسجيل الدفعة بنجاح.');
+                }
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            body.getAttribute('data-theme') === 'light' ? body.setAttribute('data-theme', 'dark') : body.setAttribute('data-theme', 'light');
         }
     </script>
 </body>
