@@ -466,7 +466,7 @@
 
     <div id="login-overlay">
         <div class="login-card">
-            <h2>أهلاً وسهلاً بنظام كاشير أسواق الباشوات</h2>
+            <h2>أهلاً وسهلاً بنظام كاشير أسواق سيف</h2>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label>اسم الموظف</label>
@@ -526,10 +526,7 @@
             <span>سجل الديون (الآجل)</span>
         </button>
 
-        <button class="menu-btn admin-only" id="btn-warehouse" onclick="switchTab('warehouse')">
-            <span class="icon">🏭</span>
-            <span>المخزن</span>
-        </button>
+        <!-- تم إلغاء أيقونة وصفحة المخزن تماماً بناءً على طلبك -->
 
         <button class="menu-btn admin-only" id="btn-shop" onclick="switchTab('shop')">
             <span class="icon">🏬</span>
@@ -693,42 +690,7 @@
             </div>
         </div>
 
-        <!-- 3. المخزن -->
-        <div id="warehouse-view" class="view-section">
-            <div class="content-box">
-                <h2>🏭 إضافة بضاعة للمخزن (الاسم والكمية فقط)</h2>
-                <form id="add-warehouse-form" onsubmit="handleAddWarehouseItem(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>اسم المنتج</label>
-                            <input type="text" id="wh-name" placeholder="مثال: بيبسي" required>
-                        </div>
-                        <div class="form-group">
-                            <label>الكمية</label>
-                            <input type="number" id="wh-qty" placeholder="مثال: 50" min="1" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ إضافة للمخزن</button>
-                </form>
-            </div>
-
-            <div class="content-box">
-                <h2>📋 محتويات المخزن الحالي</h2>
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>اسم المنتج</th>
-                            <th>الكمية المتوفرة</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="warehouse-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 4. المحل -->
+        <!-- 3. المحل -->
         <div id="shop-view" class="view-section">
             <div class="content-box">
                 <div class="flex-between">
@@ -757,7 +719,7 @@
             </div>
         </div>
 
-        <!-- 5. المشتريات -->
+        <!-- 4. المشتريات -->
         <div id="purchases-view" class="view-section">
             <div class="content-box">
                 <h2>📦 إدخال فاتورة مشتريات جديدة (أكثر من مادة)</h2>
@@ -838,7 +800,7 @@
             </div>
         </div>
 
-        <!-- 6. التقارير -->
+        <!-- 5. التقارير -->
         <div id="reports-view" class="view-section">
             <div class="stats-grid">
                 <div class="stat-card blue">
@@ -939,7 +901,7 @@
             </div>
         </div>
 
-        <!-- 7. الإعدادات والتليجرام -->
+        <!-- 6. الإعدادات والتليجرام -->
         <div id="settings-view" class="view-section">
             <div class="content-box">
                 <h2>🤖 ربط إشعارات بوت التليجرام (Telegram Notifications)</h2>
@@ -963,6 +925,39 @@
             </div>
 
             <div class="content-box">
+                <h2>👥 إدارة الموظفين والصلاحيات</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">أضف موظفاً جديداً وحدد صلاحيته (مدير يمتلك صلاحية كاملة، أو كاشير مخصص لنقطة البيع فقط).</p>
+                <form id="add-user-form" onsubmit="handleAddNewUser(event)" style="margin-top: 1rem;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>اسم الموظف</label>
+                            <input type="text" id="new-emp-name" placeholder="مثال: أحمد" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الصلاحية</label>
+                            <select id="new-emp-role" required style="padding: 0.7rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px;">
+                                <option value="admin">مدير - Admin (صلاحية كاملة)</option>
+                                <option value="cashier">كاشير - Cashier (نقطة البيع فقط)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ إضافة الموظف للنظام</button>
+                </form>
+
+                <h3 style="margin-top: 1.5rem; font-size: 1rem; color: var(--text);">قائمة الموظفين والصلاحيات الحالية</h3>
+                <table class="custom-table" style="margin-top: 0.5rem;">
+                    <thead>
+                        <tr>
+                            <th>اسم الموظف</th>
+                            <th>الصلاحية</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="content-box">
                 <h2>🎨 مظهر واجهة البرنامج (الوضع الداكن)</h2>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.2rem;">
                     <div>
@@ -974,21 +969,6 @@
                         <span class="slider-switch"></span>
                     </label>
                 </div>
-            </div>
-
-            <div class="content-box">
-                <h2>👥 قائمة المستخدمين وتعديل الصلاحيات</h2>
-                <h3 style="margin-top: 0.5rem; font-size: 1rem; color: #94a3b8;">المستخدمين الحاليين بالنظام</h3>
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>اسم المستخدم</th>
-                            <th>الصلاحية</th>
-                            <th>إجراءات والتعديل</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body"></tbody>
-                </table>
             </div>
 
             <div class="content-box">
@@ -1005,9 +985,10 @@
 
     <script>
         // المتغيرات الأساسية
-        let users = [];
+        let users = [
+            { username: "سيف", role: "admin" }
+        ];
 
-        let warehouseItems = [];
         let products = [];
         let debts = [];
         let debtPayments = [];
@@ -1046,7 +1027,6 @@
         function saveData() {
             const systemData = {
                 users: users,
-                warehouseItems: warehouseItems,
                 products: products,
                 debts: debts,
                 debtPayments: debtPayments,
@@ -1071,8 +1051,7 @@
             if (savedDb) {
                 try {
                     const data = JSON.parse(savedDb);
-                    users = data.users || [];
-                    warehouseItems = data.warehouseItems || [];
+                    users = data.users || [{ username: "سيف", role: "admin" }];
                     products = data.products || [];
                     debts = data.debts || [];
                     debtPayments = data.debtPayments || [];
@@ -1089,7 +1068,6 @@
             }
         }
 
-        // دالة حساب مجموع المبيعات الكلي لهذا اليوم (حتى هذه اللحظة)
         function getTodayTotalSalesSum() {
             let now = new Date();
             let year = now.getFullYear();
@@ -1105,14 +1083,12 @@
             return todaySales.reduce((acc, inv) => acc + inv.total, 0);
         }
 
-        // دالة إرسال الإشعارات إلى التليجرام (Telegram Bot API)
         function sendTelegramNotification(messageText) {
             if (!telegramConfig.token || !telegramConfig.chatId) {
                 console.log("إعدادات التليجرام غير مضافة، لم يتم إرسال الإشعار.");
                 return;
             }
 
-            // إضافة مجموع المبيعات الكلي لهذا اليوم في نهاية النص
             let todayTotal = getTodayTotalSalesSum();
             let finalMessage = messageText + `\n\n📈 *مجموع المبيعات الكلي لهذا اليوم:* ${todayTotal} د.ع`;
 
@@ -1123,7 +1099,6 @@
                 parse_mode: 'Markdown'
             };
 
-            // الإرسال عبر fetch بشكل غير متزامن
             fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1138,7 +1113,7 @@
                 }
             })
             .catch(err => {
-                console.error("فشل إرسال إشعار التليجرام (قد يكون بسبب الإنترنت):", err);
+                console.error("فشل إرسال إشعار التليجرام:", err);
             });
         }
 
@@ -1271,7 +1246,6 @@
 
             loadData();
 
-            // تعبئة حقول إعدادات التليجرام من المتغيرات المحفوظة
             if (document.getElementById('tg-token')) {
                 document.getElementById('tg-token').value = telegramConfig.token || '';
                 document.getElementById('tg-chatid').value = telegramConfig.chatId || '';
@@ -1305,16 +1279,18 @@
             const usernameInput = document.getElementById('login-username').value.trim();
             if (!usernameInput) return;
 
-            currentUser = { username: usernameInput, role: 'admin' };
+            let foundUser = users.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
             
-            // تخزين الموظف في قائمة المستخدمين تلقائياً إذا لم يكن موجوداً مسبقاً
-            if (!users.some(u => u.username === usernameInput)) {
-                users.push({ username: usernameInput, role: 'admin' });
+            if (!foundUser) {
+                alert('اسم الموظف غير مسجل في النظام! الرجاء مراجعة المدير لإضافته.');
+                return;
             }
 
+            currentUser = foundUser;
             saveData();
             document.getElementById('login-overlay').style.display = 'none';
             applyRolePermissions();
+            switchTab('pos');
         }
 
         function logout() {
@@ -1331,14 +1307,26 @@
         function applyRolePermissions() {
             if (!currentUser) return;
             document.getElementById('current-user-name').innerText = currentUser.username;
-            document.getElementById('current-user-role').innerText = 'مدير';
+            
+            let roleText = currentUser.role === 'admin' ? 'مدير' : 'كاشير';
+            document.getElementById('current-user-role').innerText = roleText;
 
             const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => el.style.display = '');
+            
+            if (currentUser.role === 'cashier') {
+                adminElements.forEach(el => el.style.display = 'none');
+            } else {
+                adminElements.forEach(el => el.style.display = '');
+            }
             refreshAllViews();
         }
 
         function switchTab(tabId) {
+            if (currentUser && currentUser.role === 'cashier' && tabId !== 'pos') {
+                alert('عذراً، حساب الكاشير يسمح له فقط بفتح واجهة نقطة البيع (POS) وإتمام المبيعات!');
+                return;
+            }
+
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -1356,7 +1344,6 @@
             renderCart();
             renderDebts();
             renderCustomersDatalist();
-            renderWarehouseTable();
             renderShopTable();
             renderPurchaseInvoiceTable();
             renderPurchasesLogTable();
@@ -1541,7 +1528,7 @@
         function renderCartSummary() {
             let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             let discountInput = document.getElementById('cart-discount');
-            let discount = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+            let discount = (currentUser && currentUser.role === 'cashier') ? 0 : (discountInput ? parseFloat(discountInput.value) || 0 : 0);
             
             let total = subtotal - discount;
             if (total < 0) total = 0;
@@ -1566,7 +1553,7 @@
 
             let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             let discountInput = document.getElementById('cart-discount');
-            let discount = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+            let discount = (currentUser && currentUser.role === 'cashier') ? 0 : (discountInput ? parseFloat(discountInput.value) || 0 : 0);
             let total = subtotal - discount;
             if (total < 0) total = 0;
 
@@ -1887,53 +1874,6 @@
                 refreshAllViews();
                 alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!`);
             });
-        }
-
-        function handleAddWarehouseItem(e) {
-            e.preventDefault();
-            const name = document.getElementById('wh-name').value.trim();
-            const qty = parseInt(document.getElementById('wh-qty').value);
-
-            queueOrExecute('add_warehouse_item', { name, qty }, () => {
-                let existing = warehouseItems.find(w => w.name === name);
-                if (existing) {
-                    existing.qty += qty;
-                } else {
-                    let newId = warehouseItems.length > 0 ? Math.max(...warehouseItems.map(w => w.id)) + 1 : 1;
-                    warehouseItems.push({ id: newId, name: name, qty: qty });
-                }
-
-                document.getElementById('add-warehouse-form').reset();
-                saveData();
-                refreshAllViews();
-                alert('تمت إضافة البضاعة للمخزن بنجاح!');
-            });
-        }
-
-        function renderWarehouseTable() {
-            const tbody = document.getElementById('warehouse-table-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            warehouseItems.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${item.name}</td>
-                    <td><strong>${item.qty}</strong></td>
-                    <td>
-                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteWarehouseItem(${item.id})">حذف</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function deleteWarehouseItem(id) {
-            if (confirm('هل أنت متأكد من حذف هذا المنتج من المخزن؟')) {
-                warehouseItems = warehouseItems.filter(w => w.id !== id);
-                saveData();
-                refreshAllViews();
-            }
         }
 
         function renderShopTable() {
@@ -2286,7 +2226,6 @@
             filterCustomReport();
         }
 
-        // تصفير الحساب اليومي (يقوم بترحيل المبيعات النشطة إلى الأرشيف وتصفير العداد لتبدأ مبيعات اليوم الجديد من الصفر)
         function resetDailyAccount() {
             if (salesHistory.length === 0) {
                 alert('لا توجد مبيعات في جدول اليوم لتصفيرها.');
@@ -2301,15 +2240,37 @@
             }
         }
 
+        function handleAddNewUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-emp-name').value.trim();
+            const role = document.getElementById('new-emp-role').value;
+
+            if (!name) return;
+
+            let existing = users.find(u => u.username.toLowerCase() === name.toLowerCase());
+            if (existing) {
+                existing.role = role;
+                alert(`تم تحديث صلاحية الموظف [${name}] بنجاح!`);
+            } else {
+                users.push({ username: name, role: role });
+                alert(`تم إضافة الموظف [${name}] بنجاح!`);
+            }
+
+            document.getElementById('add-user-form').reset();
+            saveData();
+            renderUsersTable();
+        }
+
         function renderUsersTable() {
             const tbody = document.getElementById('users-table-body');
             if (!tbody) return;
             tbody.innerHTML = '';
             users.forEach((user, index) => {
+                let roleBadge = user.role === 'admin' ? '<span style="color:var(--accent); font-weight:bold;">مدير - Admin</span>' : '<span style="color:var(--warning); font-weight:bold;">كاشير - Cashier</span>';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${user.username}</td>
-                    <td>مدير النظام</td>
+                    <td><strong>${user.username}</strong></td>
+                    <td>${roleBadge}</td>
                     <td>
                         <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteUser(${index})">حذف</button>
                     </td>
@@ -2319,17 +2280,20 @@
         }
 
         function deleteUser(index) {
+            if (users[index].username === currentUser.username) {
+                alert('لا يمكنك حذف الحساب الذي تستخدمه حالياً في تسجيل الدخول!');
+                return;
+            }
             if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
                 users.splice(index, 1);
                 saveData();
-                refreshAllViews();
+                renderUsersTable();
             }
         }
 
         function downloadBackup() {
             const backupData = {
                 users,
-                warehouseItems,
                 products,
                 debts,
                 debtPayments,
@@ -2356,8 +2320,7 @@
                 try {
                     const parsed = JSON.parse(e.target.result);
                     if (parsed.products) {
-                        users = parsed.users || [];
-                        warehouseItems = parsed.warehouseItems || [];
+                        users = parsed.users || [{ username: "سيف", role: "admin" }];
                         products = parsed.products;
                         debts = parsed.debts || [];
                         debtPayments = parsed.debtPayments || [];
