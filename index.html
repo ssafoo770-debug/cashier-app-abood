@@ -597,7 +597,7 @@
                     <select id="invoice-type" onchange="toggleInvoiceType()" style="width: 100%; padding: 0.6rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text);">
                         <option value="sale">🛒 فاتورة مبيعات (نقد) </option>
                         <option value="debt">📖 فاتورة آجل (دين على زبون)</option>
-                        <option value="return">↩️️ مردود مبيعات (ترجيع)</option>
+                        <option value="return">↩️ مردود مبيعات (ترجيع)</option>
                     </select>
 
                     <div id="customer-name-group" style="display: none; margin-top: 0.6rem;">
@@ -1031,6 +1031,7 @@
     </div>
 
     <script>
+        // المتغيرات الأساسية
         let users = [
             { username: 'admin', password: '123', role: 'admin' },
             { username: 'cashier', password: '123', role: 'staff' },
@@ -1047,6 +1048,7 @@
         let cart = [];
         let currentPurchaseInvoice = [];
 
+        // إعدادات التليجرام
         let telegramConfig = {
             token: '',
             chatId: ''
@@ -1118,8 +1120,10 @@
             }
         }
 
+        // دالة إرسال الإشعارات إلى التليجرام (Telegram Bot API)
         function sendTelegramNotification(messageText) {
             if (!telegramConfig.token || !telegramConfig.chatId) {
+                console.log("إعدادات التليجرام غير مضافة، لم يتم إرسال الإشعار.");
                 return;
             }
 
@@ -1130,17 +1134,32 @@
                 parse_mode: 'Markdown'
             };
 
+            // الإرسال عبر fetch بشكل غير متزامن
             fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-            }).catch(err => console.error("Telegram error:", err));
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.ok) {
+                    console.error("خطأ من تليجرام:", data);
+                } else {
+                    console.log("تم إرسال إشعار التليجرام بنجاح!");
+                }
+            })
+            .catch(err => {
+                console.error("فشل إرسال إشعار التليجرام (قد يكون بسبب الإنترنت):", err);
+            });
         }
 
         function saveTelegramSettings(e) {
             e.preventDefault();
-            telegramConfig.token = document.getElementById('tg-token').value.trim();
-            telegramConfig.chatId = document.getElementById('tg-chatid').value.trim();
+            const token = document.getElementById('tg-token').value.trim();
+            const chatId = document.getElementById('tg-chatid').value.trim();
+
+            telegramConfig.token = token;
+            telegramConfig.chatId = chatId;
             saveData();
             alert('تم حفظ إعدادات تليجرام بنجاح!');
         }
@@ -1164,16 +1183,30 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.ok) alert('✅ تم إرسال رسالة الاختبار بنجاح!');
-                else alert('❌ فشل الإرسال، تأكد من صحة التوتكن ومعرف الشات.');
+                if (data.ok) {
+                    alert('✅ تم إرسال رسالة الاختبار بنجاح إلى حسابك في التليجرام!');
+                } else {
+                    alert('❌ فشل الإرسال، تأكد من صحة التوتكن ومعرف الشات.');
+                }
             })
-            .catch(() => alert('حدث خطأ في الاتصال بالشبكة.'));
+            .catch(err => {
+                alert('حدث خطأ في الاتصال بالشبكة.');
+            });
         }
 
         function initNetworkSensors() {
-            window.addEventListener('online', () => updateNetworkUI(true));
-            window.addEventListener('offline', () => updateNetworkUI(false));
+            window.addEventListener('online', handleOnlineStatus);
+            window.addEventListener('offline', handleOfflineStatus);
             updateNetworkUI(navigator.onLine);
+        }
+
+        function handleOnlineStatus() {
+            updateNetworkUI(true);
+            syncOfflineQueue();
+        }
+
+        function handleOfflineStatus() {
+            updateNetworkUI(false);
         }
 
         function updateNetworkUI(isOnline) {
@@ -1195,23 +1228,51 @@
         }
 
         function queueOrExecute(actionType, payload, executionCallback) {
-            try {
+            if (navigator.onLine) {
+                try {
+                    executionCallback();
+                } catch(err) {
+                    console.error("خطأ أثناء التنفيذ:", err);
+                    addToQueue(actionType, payload);
+                }
+            } else {
+                addToQueue(actionType, payload);
                 executionCallback();
-            } catch(err) {
-                console.error("خطأ أثناء التنفيذ:", err);
+                alert('⚠️ جهازك غير متصل بالإنترنت حالياً! تم حفظ العملية في الطابور وسيتم مزامنتها وإرسال إشعارها فور عودة الاتصال.');
             }
+        }
+
+        function addToQueue(actionType, payload) {
+            offlineQueue.push({
+                type: actionType,
+                payload: payload,
+                timestamp: new Date().toISOString()
+            });
+            saveData();
+            updateQueueBadge();
         }
 
         function updateQueueBadge() {
             const queueBadge = document.getElementById('offline-queue-badge');
             const queueCountSpan = document.getElementById('queue-count');
             if (!queueBadge || !queueCountSpan) return;
+
             if (offlineQueue.length > 0) {
                 queueCountSpan.innerText = offlineQueue.length;
                 queueBadge.style.display = 'inline-block';
             } else {
                 queueBadge.style.display = 'none';
             }
+        }
+
+        function syncOfflineQueue() {
+            if (offlineQueue.length === 0) return;
+            setTimeout(() => {
+                offlineQueue = [];
+                saveData();
+                updateQueueBadge();
+                console.log("تمت مزامنة العمليات المعلقة وتنبيهات التليجرام!");
+            }, 1000);
         }
 
         window.onload = function() {
@@ -1221,6 +1282,7 @@
 
             loadData();
 
+            // تعبئة حقول إعدادات التليجرام من المتغيرات المحفوظة
             if (document.getElementById('tg-token')) {
                 document.getElementById('tg-token').value = telegramConfig.token || '';
                 document.getElementById('tg-chatid').value = telegramConfig.chatId || '';
@@ -1340,7 +1402,13 @@
                 let isZero = prod.qty <= 0;
                 let qtyLabel = isZero ? `<small style="display:block; color:#dc2626; font-weight:bold;">متوفر: 0 (نافد)</small>` : `<small style="display:block; opacity:0.7;">متوفر: ${prod.qty}</small>`;
                 
-                div.innerHTML = `<div><strong>${prod.name}</strong>${qtyLabel}</div><span style="color:var(--green); font-weight:bold;">${prod.price} د.ع</span>`;
+                div.innerHTML = `
+                    <div>
+                        <strong>${prod.name}</strong>
+                        ${qtyLabel}
+                    </div>
+                    <span style="color:var(--green); font-weight:bold;">${prod.price} د.ع</span>
+                `;
                 div.onclick = () => {
                     addToCart(prod.id);
                     document.getElementById('cart-search-input').value = '';
@@ -1410,7 +1478,11 @@
                 card.className = isOutOfStock ? 'product-card out-of-stock' : 'product-card';
                 let qtyText = isOutOfStock ? 'متوفر: 0 (نافد)' : `متوفر: ${prod.qty}`;
 
-                card.innerHTML = `<h4>${prod.name}</h4><div class="price">${prod.price} د.ع</div><div class="qty">${qtyText}</div>`;
+                card.innerHTML = `
+                    <h4>${prod.name}</h4>
+                    <div class="price">${prod.price} د.ع</div>
+                    <div class="qty">${qtyText}</div>
+                `;
                 card.onclick = () => addToCart(prod.id);
                 grid.appendChild(card);
             });
@@ -1462,9 +1534,12 @@
                 const row = document.createElement('div');
                 row.className = 'cart-item';
                 row.innerHTML = `
-                    <div><strong>${item.name}</strong><br><small style="opacity: 0.8;">${item.price} د.ع × ${item.qty}</small></div>
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <small style="opacity: 0.8;">${item.price} د.ع × ${item.qty}</small>
+                    </div>
                     <div class="cart-item-controls">
-                        <button class="remove-item-btn" onclick="removeFromCart(${item.id})" title="إلغاء">❌</button>
+                        <button class="remove-item-btn" onclick="removeFromCart(${item.id})" title="إلغاء المادة من الفاتورة">❌</button>
                         <button class="qty-btn" onclick="changeCartQty(${item.id}, -1)">-</button>
                         <span>${item.qty}</span>
                         <button class="qty-btn" onclick="changeCartQty(${item.id}, 1)">+</button>
@@ -1521,78 +1596,84 @@
             let recordTotal = total;
             let recordProfit = calculatedProfit;
 
-            if (invType === 'return') {
-                recordTotal = -total;
-                recordProfit = -calculatedProfit;
-                cart.forEach(cartItem => {
-                    let prod = products.find(p => p.id === cartItem.id);
-                    if (prod) prod.qty += cartItem.qty;
-                });
-            } else if (invType === 'debt') {
-                recordTotal = 0; 
-                recordProfit = 0; 
-                cart.forEach(cartItem => {
-                    let prod = products.find(p => p.id === cartItem.id);
-                    if (prod) prod.qty -= cartItem.qty;
-                });
+            queueOrExecute('checkout_invoice', { cart: [...cart], invType, customerName, total, calculatedProfit }, () => {
+                if (invType === 'return') {
+                    recordTotal = -total;
+                    recordProfit = -calculatedProfit;
 
-                let existingCustomer = debts.find(d => d.customer.toLowerCase() === customerName.toLowerCase());
-                if (existingCustomer) {
-                    existingCustomer.amount += total;
-                    existingCustomer.lastUpdate = fullDateStr;
+                    cart.forEach(cartItem => {
+                        let prod = products.find(p => p.id === cartItem.id);
+                        if (prod) prod.qty += cartItem.qty;
+                    });
+                } else if (invType === 'debt') {
+                    recordTotal = 0; 
+                    recordProfit = 0; 
+
+                    cart.forEach(cartItem => {
+                        let prod = products.find(p => p.id === cartItem.id);
+                        if (prod) prod.qty -= cartItem.qty;
+                    });
+
+                    let existingCustomer = debts.find(d => d.customer.toLowerCase() === customerName.toLowerCase());
+                    if (existingCustomer) {
+                        existingCustomer.amount += total;
+                        existingCustomer.lastUpdate = fullDateStr;
+                    } else {
+                        debts.push({
+                            id: debts.length > 0 ? Math.max(...debts.map(d => d.id)) + 1 : 1,
+                            customer: customerName,
+                            phone: 'غير محدد',
+                            amount: total,
+                            lastUpdate: fullDateStr
+                        });
+                    }
                 } else {
-                    debts.push({
-                        id: debts.length > 0 ? Math.max(...debts.map(d => d.id)) + 1 : 1,
-                        customer: customerName,
-                        phone: 'غير محدد',
-                        amount: total,
-                        lastUpdate: fullDateStr
+                    cart.forEach(cartItem => {
+                        let prod = products.find(p => p.id === cartItem.id);
+                        if (prod) prod.qty -= cartItem.qty;
                     });
                 }
-            } else {
-                cart.forEach(cartItem => {
-                    let prod = products.find(p => p.id === cartItem.id);
-                    if (prod) prod.qty -= cartItem.qty;
+
+                salesHistory.push({
+                    invoiceNo: invoiceCounter++,
+                    type: invType,
+                    customer: invType === 'debt' ? customerName : '',
+                    date: dateString,
+                    time: fullDateStr,
+                    items: [...cart],
+                    discount: discount,
+                    originalTotal: total,
+                    originalProfit: calculatedProfit,
+                    paidAmount: invType === 'debt' ? 0 : total,
+                    paidProfit: invType === 'debt' ? 0 : calculatedProfit,
+                    total: recordTotal,
+                    profit: recordProfit
                 });
-            }
 
-            salesHistory.push({
-                invoiceNo: invoiceCounter++,
-                type: invType,
-                customer: invType === 'debt' ? customerName : '',
-                date: dateString,
-                time: fullDateStr,
-                items: [...cart],
-                discount: discount,
-                originalTotal: total,
-                originalProfit: calculatedProfit,
-                paidAmount: invType === 'debt' ? 0 : total,
-                paidProfit: invType === 'debt' ? 0 : calculatedProfit,
-                total: recordTotal,
-                profit: recordProfit
+                let itemsListText = cart.map(i => `• ${i.name} (الكمية: ${i.qty} | السعر: ${i.price} د.ع)`).join('\n');
+                let tgMsg = "";
+
+                if (invType === 'debt') {
+                    tgMsg = `📖 *فاتورة دين / آجل جديدة*\n\n👤 *الزبون:* ${customerName}\n💰 *المبلغ الإجمالي:* ${total} د.ع\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد المشتراة:*\n${itemsListText}`;
+                } else if (invType === 'sale') {
+                    tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
+                }
+
+                if (tgMsg) {
+                    sendTelegramNotification(tgMsg);
+                }
+
+                cart = [];
+                if (discountInput) discountInput.value = '0';
+                document.getElementById('customer-name-input').value = '';
+                
+                saveData();
+                refreshAllViews();
+
+                if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد للمحل بنجاح!');
+                else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح، وإرسال إشعار التليجرام!`);
+                else alert('تم إتمام عملية البيع وإرسال إشعار التليجرام بنجاح!');
             });
-
-            let itemsListText = cart.map(i => `• ${i.name} (عدد: ${i.qty} | السعر: ${i.price} د.ع)`).join('\n');
-            let tgMsg = "";
-
-            if (invType === 'debt') {
-                tgMsg = `📖 *فاتورة دين / آجل جديدة*\n\n👤 *الزبون:* ${customerName}\n💰 *المبلغ الإجمالي:* ${total} د.ع\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
-            } else if (invType === 'sale') {
-                tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
-            }
-
-            if (tgMsg) sendTelegramNotification(tgMsg);
-
-            cart = [];
-            if (discountInput) discountInput.value = '0';
-            document.getElementById('customer-name-input').value = '';
-            
-            saveData();
-            refreshAllViews();
-
-            if (invType === 'return') alert('تم تسجيل مردود المبيعات وإعادة المواد بنجاح!');
-            else if (invType === 'debt') alert(`تم تسجيل دين بقيمة (${total} د.ع) على الزبون [${customerName}] بنجاح!`);
-            else alert('تم إتمام عملية البيع بنجاح!');
         }
 
         function handleAddCustomer(e) {
@@ -1600,26 +1681,28 @@
             const name = document.getElementById('new-cust-name').value.trim();
             const phone = document.getElementById('new-cust-phone').value.trim() || 'غير محدد';
 
-            let existing = debts.find(d => d.customer.toLowerCase() === name.toLowerCase());
-            if (existing) {
-                existing.phone = phone;
-                alert(`تم تحديث رقم هاتف الزبون [${name}] بنجاح!`);
-            } else {
-                let now = new Date();
-                let dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
-                debts.push({
-                    id: debts.length > 0 ? Math.max(...debts.map(d => d.id)) + 1 : 1,
-                    customer: name,
-                    phone: phone,
-                    amount: 0,
-                    lastUpdate: dateStr
-                });
-                alert(`تم تسجيل الزبون [${name}] بنجاح في دفتر الديون!`);
-            }
+            queueOrExecute('add_customer', { name, phone }, () => {
+                let existing = debts.find(d => d.customer.toLowerCase() === name.toLowerCase());
+                if (existing) {
+                    existing.phone = phone;
+                    alert(`تم تحديث رقم هاتف الزبون [${name}] بنجاح!`);
+                } else {
+                    let now = new Date();
+                    let dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+                    debts.push({
+                        id: debts.length > 0 ? Math.max(...debts.map(d => d.id)) + 1 : 1,
+                        customer: name,
+                        phone: phone,
+                        amount: 0,
+                        lastUpdate: dateStr
+                    });
+                    alert(`تم تسجيل الزبون [${name}] بنجاح بصفحة الديون!`);
+                }
 
-            document.getElementById('add-customer-form').reset();
-            saveData();
-            refreshAllViews();
+                document.getElementById('add-customer-form').reset();
+                saveData();
+                refreshAllViews();
+            });
         }
 
         function renderDebts() {
@@ -1642,7 +1725,9 @@
                         <td>${debt.phone || 'غير محدد'}</td>
                         <td style="color:#d97706; font-weight:bold; font-size:1.1rem;">${debt.amount} د.ع</td>
                         <td>${debt.lastUpdate}</td>
-                        <td><button class="btn btn-green" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="payDebtModal(${debt.id})">💰 تسديد دين</button></td>
+                        <td>
+                            <button class="btn btn-green" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="payDebtModal(${debt.id})">💰 تسديد دين</button>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -1656,7 +1741,13 @@
                 paymentsBody.innerHTML = '';
                 debtPayments.slice().reverse().forEach(p => {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${p.time}</td><td><strong>${p.customer}</strong></td><td style="color:var(--green); font-weight:bold;">${p.paidAmount} د.ع</td><td style="color:var(--accent); font-weight:bold;">+${p.realizedProfit || 0} د.ع</td><td>${p.remainingAmount} د.ع</td>`;
+                    tr.innerHTML = `
+                        <td>${p.time}</td>
+                        <td><strong>${p.customer}</strong></td>
+                        <td style="color:var(--green); font-weight:bold;">${p.paidAmount} د.ع</td>
+                        <td style="color:var(--accent); font-weight:bold;">+${p.realizedProfit || 0} د.ع</td>
+                        <td>${p.remainingAmount} د.ع</td>
+                    `;
                     paymentsBody.appendChild(tr);
                 });
             }
@@ -1679,13 +1770,26 @@
             let custPays = debtPayments.filter(p => p.customer.toLowerCase() === custName.toLowerCase());
 
             let activities = [];
+
             custInvoices.forEach(inv => {
                 let itemsList = inv.items ? inv.items.map(i => `${i.name} (عدد ${i.qty})`).join('، ') : 'مشتريات آجل';
-                activities.push({ time: inv.time, type: 'دين (شراء آجل)', details: itemsList, amount: inv.originalTotal || inv.total, isDebt: true });
+                activities.push({
+                    time: inv.time,
+                    type: 'دين (شراء آجل)',
+                    details: itemsList,
+                    amount: inv.originalTotal || inv.total,
+                    isDebt: true
+                });
             });
 
             custPays.forEach(p => {
-                activities.push({ time: p.time, type: 'تسديد نقد', details: `دفعة مسددة من الدين (ربحها: ${p.realizedProfit || 0} د.ع)`, amount: p.paidAmount, isDebt: false });
+                activities.push({
+                    time: p.time,
+                    type: 'تسديد نقد',
+                    details: `دفعة مسددة من الدين (ربحها: ${p.realizedProfit || 0} د.ع)`,
+                    amount: p.paidAmount,
+                    isDebt: false
+                });
             });
 
             activities.sort((a, b) => new Date(a.time) - new Date(b.time));
@@ -1698,7 +1802,12 @@
                     const tr = document.createElement('tr');
                     let amtStyle = act.isDebt ? 'color:#dc2626; font-weight:bold;' : 'color:#16a34a; font-weight:bold;';
                     let sign = act.isDebt ? '+' : '-';
-                    tr.innerHTML = `<td>${act.time}</td><td><strong>${act.type}</strong></td><td>${act.details}</td><td style="${amtStyle}">${sign} ${act.amount} د.ع</td>`;
+                    tr.innerHTML = `
+                        <td>${act.time}</td>
+                        <td><strong>${act.type}</strong></td>
+                        <td>${act.details}</td>
+                        <td style="${amtStyle}">${sign} ${act.amount} د.ع</td>
+                    `;
                     modalBody.appendChild(tr);
                 });
             }
@@ -1728,62 +1837,65 @@
                 return;
             }
 
-            debtObj.amount -= payAmount;
-            
-            let now = new Date();
-            let year = now.getFullYear();
-            let month = String(now.getMonth() + 1).padStart(2, '0');
-            let day = String(now.getDate()).padStart(2, '0');
-            let dateStrShort = `${year}-${month}-${day}`;
-            let dateStr = `${dateStrShort} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+            queueOrExecute('pay_debt', { debtId, payAmount }, () => {
+                debtObj.amount -= payAmount;
+                
+                let now = new Date();
+                let year = now.getFullYear();
+                let month = String(now.getMonth() + 1).padStart(2, '0');
+                let day = String(now.getDate()).padStart(2, '0');
+                let dateStrShort = `${year}-${month}-${day}`;
+                let dateStr = `${dateStrShort} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
 
-            let remainingToDistribute = payAmount;
-            let totalRealizedProfit = 0;
+                let remainingToDistribute = payAmount;
+                let totalRealizedProfit = 0;
 
-            let allCustomerDebts = salesHistory.filter(inv => inv.type === 'debt' && inv.customer.toLowerCase() === debtObj.customer.toLowerCase() && (inv.paidAmount < inv.originalTotal));
+                let allCustomerDebts = salesHistory.filter(inv => inv.type === 'debt' && inv.customer.toLowerCase() === debtObj.customer.toLowerCase() && (inv.paidAmount < inv.originalTotal));
 
-            for (let inv of allCustomerDebts) {
-                if (remainingToDistribute <= 0) break;
-                let unpaidOnInvoice = inv.originalTotal - inv.paidAmount;
-                let paymentForThisInvoice = Math.min(remainingToDistribute, unpaidOnInvoice);
+                for (let inv of allCustomerDebts) {
+                    if (remainingToDistribute <= 0) break;
 
-                let profitRatio = inv.originalTotal > 0 ? (inv.originalProfit / inv.originalTotal) : 0;
-                let profitFromThisPayment = paymentForThisInvoice * profitRatio;
+                    let unpaidOnInvoice = inv.originalTotal - inv.paidAmount;
+                    let paymentForThisInvoice = Math.min(remainingToDistribute, unpaidOnInvoice);
 
-                inv.paidAmount += paymentForThisInvoice;
-                inv.paidProfit += profitFromThisPayment;
+                    let profitRatio = inv.originalTotal > 0 ? (inv.originalProfit / inv.originalTotal) : 0;
+                    let profitFromThisPayment = paymentForThisInvoice * profitRatio;
 
-                totalRealizedProfit += profitFromThisPayment;
-                remainingToDistribute -= paymentForThisInvoice;
-            }
+                    inv.paidAmount += paymentForThisInvoice;
+                    inv.paidProfit += profitFromThisPayment;
 
-            totalRealizedProfit = Math.round(totalRealizedProfit);
+                    totalRealizedProfit += profitFromThisPayment;
+                    remainingToDistribute -= paymentForThisInvoice;
+                }
 
-            debtPayments.push({
-                customer: debtObj.customer,
-                paidAmount: payAmount,
-                realizedProfit: totalRealizedProfit,
-                remainingAmount: debtObj.amount,
-                time: dateStr
+                totalRealizedProfit = Math.round(totalRealizedProfit);
+
+                debtPayments.push({
+                    customer: debtObj.customer,
+                    paidAmount: payAmount,
+                    realizedProfit: totalRealizedProfit,
+                    remainingAmount: debtObj.amount,
+                    time: dateStr
+                });
+
+                salesHistory.push({
+                    invoiceNo: invoiceCounter++,
+                    type: 'debt_payment',
+                    customer: debtObj.customer,
+                    date: dateStrShort,
+                    time: dateStr,
+                    items: [],
+                    discount: 0,
+                    total: payAmount,
+                    profit: totalRealizedProfit
+                });
+
+                debtObj.lastUpdate = dateStr;
+
+                saveData();
+                refreshAllViews();
+                alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!`);
             });
-
-            salesHistory.push({
-                invoiceNo: invoiceCounter++,
-                type: 'debt_payment',
-                customer: debtObj.customer,
-                date: dateStrShort,
-                time: dateStr,
-                items: [],
-                discount: 0,
-                total: payAmount,
-                profit: totalRealizedProfit
-            });
-
-            debtObj.lastUpdate = dateStr;
-
-            saveData();
-            refreshAllViews();
-            alert(`تم تسديد (${payAmount} د.ع) وتحديث سجل الدين بنجاح!`);
         }
 
         function handleAddWarehouseItem(e) {
@@ -1791,18 +1903,20 @@
             const name = document.getElementById('wh-name').value.trim();
             const qty = parseInt(document.getElementById('wh-qty').value);
 
-            let existing = warehouseItems.find(w => w.name === name);
-            if (existing) {
-                existing.qty += qty;
-            } else {
-                let newId = warehouseItems.length > 0 ? Math.max(...warehouseItems.map(w => w.id)) + 1 : 1;
-                warehouseItems.push({ id: newId, name: name, qty: qty });
-            }
+            queueOrExecute('add_warehouse_item', { name, qty }, () => {
+                let existing = warehouseItems.find(w => w.name === name);
+                if (existing) {
+                    existing.qty += qty;
+                } else {
+                    let newId = warehouseItems.length > 0 ? Math.max(...warehouseItems.map(w => w.id)) + 1 : 1;
+                    warehouseItems.push({ id: newId, name: name, qty: qty });
+                }
 
-            document.getElementById('add-warehouse-form').reset();
-            saveData();
-            refreshAllViews();
-            alert('تمت إضافة البضاعة للمخزن بنجاح!');
+                document.getElementById('add-warehouse-form').reset();
+                saveData();
+                refreshAllViews();
+                alert('تمت إضافة البضاعة للمخزن بنجاح!');
+            });
         }
 
         function renderWarehouseTable() {
@@ -1811,7 +1925,14 @@
             tbody.innerHTML = '';
             warehouseItems.forEach((item, index) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${index + 1}</td><td>${item.name}</td><td><strong>${item.qty}</strong></td><td><button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteWarehouseItem(${item.id})">حذف</button></td>`;
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td><strong>${item.qty}</strong></td>
+                    <td>
+                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteWarehouseItem(${item.id})">حذف</button>
+                    </td>
+                `;
                 tbody.appendChild(tr);
             });
         }
@@ -1831,24 +1952,32 @@
             
             let totalCapitalCost = 0;
             products.forEach((prod, index) => {
+                let barcodeText = prod.barcode ? prod.barcode : '<span style="color:#94a3b8">بدون باركود</span>';
                 totalCapitalCost += (prod.cost * prod.qty);
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${index + 1}</td><td>${prod.barcode || '-'}</td><td><strong>${prod.name}</strong></td><td style="color:#2563eb;">${prod.cost} د.ع</td><td style="color:var(--green);">${prod.price} د.ع</td><td><strong>${prod.qty}</strong></td>`;
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${barcodeText}</td>
+                    <td>${prod.name}</td>
+                    <td>${prod.cost} د.ع</td>
+                    <td>${prod.price} د.ع</td>
+                    <td><strong style="${prod.qty <= 0 ? 'color:#ef4444;' : ''}">${prod.qty}</strong></td>
+                `;
                 tbody.appendChild(tr);
             });
-
-            const costVal = document.getElementById('shop-total-cost-val');
-            if (costVal) costVal.innerText = totalCapitalCost + ' د.ع';
+            const costValElem = document.getElementById('shop-total-cost-val');
+            if (costValElem) costValElem.innerText = totalCapitalCost + ' د.ع';
         }
 
-        function checkBarcodeExists(barcode) {
-            barcode = barcode.trim();
-            if (!barcode) return;
-            const found = products.find(p => p.barcode === barcode);
-            if (found) {
-                document.getElementById('p-item-name').value = found.name;
-                document.getElementById('p-item-cost').value = found.cost;
-                document.getElementById('p-item-price').value = found.price;
+        function checkBarcodeExists(barcodeVal) {
+            barcodeVal = barcodeVal.trim();
+            if (!barcodeVal) return;
+
+            let foundProd = products.find(p => p.barcode === barcodeVal);
+            if (foundProd) {
+                document.getElementById('p-item-name').value = foundProd.name;
+                document.getElementById('p-item-cost').value = foundProd.cost;
+                document.getElementById('p-item-price').value = foundProd.price;
             }
         }
 
@@ -1860,9 +1989,47 @@
             const price = parseFloat(document.getElementById('p-item-price').value);
             const qty = parseInt(document.getElementById('p-item-qty').value);
 
-            currentPurchaseInvoice.push({ barcode, name, cost, price, qty });
+            currentPurchaseInvoice.push({
+                barcode: barcode,
+                name: name,
+                cost: cost,
+                price: price,
+                qty: qty
+            });
+
             document.getElementById('add-purchase-item-form').reset();
             renderPurchaseInvoiceTable();
+        }
+
+        function renderPurchaseInvoiceTable() {
+            const tbody = document.getElementById('purchase-invoice-items-body');
+            if (!tbody) return;
+            
+            if (currentPurchaseInvoice.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>`;
+                document.getElementById('purchase-invoice-total-val').innerText = '0 د.ع';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            let totalInvoiceCost = 0;
+            currentPurchaseInvoice.forEach((item, index) => {
+                let itemTotal = item.cost * item.qty;
+                totalInvoiceCost += itemTotal;
+                let bCodeDisplay = item.barcode ? item.barcode : '-';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${bCodeDisplay}</td>
+                    <td>${item.name}</td>
+                    <td>${item.cost} د.ع</td>
+                    <td>${item.price} د.ع</td>
+                    <td>${item.qty}</td>
+                    <td>${itemTotal} د.ع</td>
+                    <td><button class="btn btn-danger" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="removePurchaseInvoiceItem(${index})">حذف</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('purchase-invoice-total-val').innerText = totalInvoiceCost + ' د.ع';
         }
 
         function removePurchaseInvoiceItem(index) {
@@ -1870,67 +2037,55 @@
             renderPurchaseInvoiceTable();
         }
 
-        function renderPurchaseInvoiceTable() {
-            const tbody = document.getElementById('purchase-invoice-items-body');
-            const totalVal = document.getElementById('purchase-invoice-total-val');
-            if (!tbody) return;
-
-            if (currentPurchaseInvoice.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لم تقم بإضافة مواد للفاتورة بعد</td></tr>`;
-                if (totalVal) totalVal.innerText = '0 د.ع';
-                return;
-            }
-
-            tbody.innerHTML = '';
-            let totalInvoiceCost = 0;
-
-            currentPurchaseInvoice.forEach((item, index) => {
-                let itemTotalCost = item.cost * item.qty;
-                totalInvoiceCost += itemTotalCost;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${item.barcode || '-'}</td><td><strong>${item.name}</strong></td><td>${item.cost} د.ع</td><td>${item.price} د.ع</td><td>${item.qty}</td><td style="color:var(--green); font-weight:bold;">${itemTotalCost} د.ع</td><td><button class="btn btn-danger" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="removePurchaseInvoiceItem(${index})">حذف</button></td>`;
-                tbody.appendChild(tr);
-            });
-
-            if (totalVal) totalVal.innerText = totalInvoiceCost + ' د.ع';
-        }
-
         function savePurchaseInvoice() {
             if (currentPurchaseInvoice.length === 0) {
-                alert('قائمة الفاتورة فارغة!');
+                alert('الفاتورة فارغة!');
                 return;
             }
 
-            currentPurchaseInvoice.forEach(item => {
-                let existing = products.find(p => p.name.toLowerCase() === item.name.toLowerCase() || (item.barcode && p.barcode === item.barcode));
-                if (existing) {
-                    existing.qty += item.qty;
-                    existing.cost = item.cost;
-                    existing.price = item.price;
-                    if (item.barcode) existing.barcode = item.barcode;
-                } else {
-                    let newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-                    products.push({
-                        id: newId,
-                        barcode: item.barcode || '',
-                        name: item.name,
-                        cost: item.cost,
-                        price: item.price,
-                        qty: item.qty
-                    });
-                }
+            queueOrExecute('save_purchase_invoice', { items: [...currentPurchaseInvoice] }, () => {
+                let totalInvoiceCost = currentPurchaseInvoice.reduce((sum, i) => sum + (i.cost * i.qty), 0);
+                
+                currentPurchaseInvoice.forEach(invItem => {
+                    let existingProd = null;
+                    if (invItem.barcode) {
+                        existingProd = products.find(p => p.barcode === invItem.barcode);
+                    }
+                    if (!existingProd) {
+                        existingProd = products.find(p => p.name === invItem.name);
+                    }
+
+                    if (existingProd) {
+                        if (invItem.barcode) existingProd.barcode = invItem.barcode;
+                        existingProd.cost = invItem.cost;
+                        existingProd.price = invItem.price;
+                        existingProd.qty += invItem.qty;
+                    } else {
+                        let newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                        products.push({
+                            id: newId,
+                            barcode: invItem.barcode || '',
+                            name: invItem.name,
+                            cost: invItem.cost,
+                            price: invItem.price,
+                            qty: invItem.qty
+                        });
+                    }
+                });
+
+                let now = new Date();
+                let timeStr = `${now.toLocaleDateString()} ${now.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' })}`;
+                let itemsListText = currentPurchaseInvoice.map(i => `• ${i.name} (الكمية: ${i.qty} | تكلفة المفرد: ${i.cost} د.ع | بيع المفرد: ${i.price} د.ع)`).join('\n');
+                
+                let tgMsg = `📦 *تنزيل فاتورة مشتريات جديدة*\n\n💰 *التكلفة الإجمالية للفاتورة:* ${totalInvoiceCost} د.ع\n🕒 *الوقت:* ${timeStr}\n\n📋 *تفاصيل المواد المشتراة:*\n${itemsListText}`;
+                
+                sendTelegramNotification(tgMsg);
+
+                currentPurchaseInvoice = [];
+                saveData();
+                refreshAllViews();
+                alert('تم اعتماد وحفظ فاتورة المشتريات وإرسال إشعار التليجرام بنجاح!');
             });
-
-            let itemsListText = currentPurchaseInvoice.map(i => `• ${i.name} (عدد: ${i.qty} | التكلفة: ${i.cost} د.ع | البيع: ${i.price} د.ع)`).join('\n');
-            let totalCost = currentPurchaseInvoice.reduce((sum, i) => sum + (i.cost * i.qty), 0);
-            let tgMsg = `📦 *فاتورة مشتريات جديدة أضيفت للمحل*\n\n💰 *الإجمالي الكلي:* ${totalCost} د.ع\n\n*المواد:*\n${itemsListText}`;
-            sendTelegramNotification(tgMsg);
-
-            currentPurchaseInvoice = [];
-            saveData();
-            refreshAllViews();
-            alert('✅ تم اعتماد وحفظ فاتورة المشتريات وإرسال التنبيه وتحديث المحل بنجاح!');
         }
 
         function renderPurchasesLogTable() {
@@ -1938,8 +2093,19 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             products.forEach((prod, index) => {
+                let bCodeText = prod.barcode ? prod.barcode : '<span style="color:#94a3b8">بدون</span>';
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${index + 1}</td><td>${prod.barcode || '-'}</td><td><strong>${prod.name}</strong></td><td>${prod.cost} د.ع</td><td>${prod.price} د.ع</td><td><strong>${prod.qty}</strong></td><td><button class="btn btn-danger" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="deleteShopProduct(${prod.id})">حذف</button></td>`;
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${bCodeText}</td>
+                    <td>${prod.name}</td>
+                    <td>${prod.cost} د.ع</td>
+                    <td>${prod.price} د.ع</td>
+                    <td><strong style="${prod.qty <= 0 ? 'color:#ef4444;' : ''}">${prod.qty}</strong></td>
+                    <td>
+                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteShopProduct(${prod.id})">حذف</button>
+                    </td>
+                `;
                 tbody.appendChild(tr);
             });
         }
@@ -1952,115 +2118,194 @@
             }
         }
 
-        function renderReports() {
-            const countElem = document.getElementById('stat-invoices-count');
-            const salesElem = document.getElementById('stat-total-sales');
-            const profitElem = document.getElementById('stat-total-profit');
-            const historyBody = document.getElementById('sales-history-body');
-
-            let todayStr = new Date().toISOString().split('T')[0];
-            let todayInvoices = salesHistory.filter(inv => inv.date === todayStr);
-
-            if (countElem) countElem.innerText = todayInvoices.length;
-
-            let totalSalesToday = todayInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-            let totalProfitToday = todayInvoices.reduce((sum, inv) => sum + (inv.profit || inv.paidProfit || 0), 0);
-
-            if (salesElem) salesElem.innerText = totalSalesToday + ' د.ع';
-            if (profitElem) profitElem.innerText = totalProfitToday + ' د.ع';
-
-            if (historyBody) {
-                historyBody.innerHTML = '';
-                if (salesHistory.length === 0) {
-                    historyBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لا توجد حركات مبيعات مسجلة اليوم</td></tr>`;
-                } else {
-                    salesHistory.slice().reverse().forEach(inv => {
-                        const tr = document.createElement('tr');
-                        let typeLabel = inv.type === 'sale' ? '🛒 مبيعات نقد' : inv.type === 'debt' ? `📖 آجل (${inv.customer})` : inv.type === 'return' ? '↩️ مردود' : `💰 تسديد (${inv.customer})`;
-                        tr.innerHTML = `<td>#${inv.invoiceNo}</td><td>${inv.time}</td><td><strong>${typeLabel}</strong></td><td>${inv.customer || 'نقدي مباشر'}</td><td>${inv.discount || 0} د.ع</td><td style="color:var(--green); font-weight:bold;">${inv.total} د.ع</td><td style="color:var(--accent); font-weight:bold;">+${inv.profit || inv.paidProfit || 0} د.ع</td>`;
-                        historyBody.appendChild(tr);
-                    });
-                }
-            }
-        }
-
-        function getAllSalesCombined() {
-            return [...salesHistory, ...archivedSales];
-        }
-
-        function filterCustomReport() {
-            const startStr = document.getElementById('report-start-date').value.trim();
-            const endStr = document.getElementById('report-end-date').value.trim();
-            const salesVal = document.getElementById('custom-report-sales');
-            const profitVal = document.getElementById('custom-report-profit');
-            const countVal = document.getElementById('custom-report-count');
-            const tbody = document.getElementById('custom-report-table-body');
-
-            if (!startStr || !endStr) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">الرجاء تحديد تاريخ البداية والنهاية</td></tr>`;
-                return;
-            }
-
-            let all = getAllSalesCombined();
-            let filtered = all.filter(inv => inv.date >= startStr && inv.date <= endStr);
-
-            let totalSales = filtered.reduce((s, i) => s + (i.total || 0), 0);
-            let totalProfit = filtered.reduce((s, i) => s + (i.profit || i.paidProfit || 0), 0);
-
-            salesVal.innerText = totalSales + ' د.ع';
-            profitVal.innerText = totalProfit + ' د.ع';
-            countVal.innerText = filtered.length;
-
-            tbody.innerHTML = '';
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد حركات مطابقة للفترة المحددة</td></tr>`;
+        function formatDateInput(input) {
+            let val = input.value.replace(/\D/g, '');
+            if (val.length >= 2 && val.length < 4) {
+                input.value = val.slice(0, 2) + '/' + val.slice(2);
+            } else if (val.length >= 4) {
+                input.value = val.slice(0, 2) + '/' + val.slice(2, 4) + '/' + val.slice(4, 8);
             } else {
-                filtered.slice().reverse().forEach(inv => {
-                    const tr = document.createElement('tr');
-                    let itemsSummary = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join('، ') : (inv.type === 'debt_payment' ? 'تسديد دين' : '-');
-                    tr.innerHTML = `<td>#${inv.invoiceNo}</td><td>${inv.time}</td><td>${inv.type}</td><td>${itemsSummary}</td><td style="color:var(--green); font-weight:bold;">${inv.total} د.ع</td><td style="color:var(--accent); font-weight:bold;">+${inv.profit || inv.paidProfit || 0} د.ع</td>`;
-                    tbody.appendChild(tr);
-                });
+                input.value = val;
             }
+        }
+
+        function parseInputDate(dateStr) {
+            if (!dateStr || dateStr.length !== 10) return null;
+            let parts = dateStr.split('/');
+            if (parts.length !== 3) return null;
+            let day = parts[0].padStart(2, '0');
+            let month = parts[1].padStart(2, '0');
+            let year = parts[2];
+            if (year.length !== 4) return null;
+            return `${year}-${month}-${day}`;
         }
 
         function setCurrentMonthRange() {
             let now = new Date();
+            let y = now.getFullYear();
+            let m = String(now.getMonth() + 1).padStart(2, '0');
+            
+            let firstDayStr = `01/${m}/${y}`;
+            let lastDayNum = new Date(y, now.getMonth() + 1, 0).getDate();
+            let lastDayStr = `${String(lastDayNum).padStart(2, '0')}/${m}/${y}`;
+
+            document.getElementById('report-start-date').value = firstDayStr;
+            document.getElementById('report-end-date').value = lastDayStr;
+            filterCustomReport();
+        }
+
+        function getAllSalesCombined() {
+            return [...archivedSales, ...salesHistory];
+        }
+
+        function renderReports() {
+            const countElem = document.getElementById('stat-invoices-count');
+            const totalSalesElem = document.getElementById('stat-total-sales');
+            const totalProfitElem = document.getElementById('stat-total-profit');
+            const historyBody = document.getElementById('sales-history-body');
+
+            if (!countElem) return;
+
+            let now = new Date();
             let year = now.getFullYear();
             let month = String(now.getMonth() + 1).padStart(2, '0');
-            let firstDay = `${year}-${month}-01`;
-            let lastDay = `${year}-${month}-${new Date(year, now.getMonth() + 1, 0).getDate()}`;
+            let day = String(now.getDate()).padStart(2, '0');
+            let todayDateStr = `${year}-${month}-${day}`;
 
-            document.getElementById('report-start-date').value = firstDay;
-            document.getElementById('report-end-date').value = lastDay;
+            let todaySales = salesHistory.filter(inv => {
+                let invDate = inv.date || (inv.time ? inv.time.slice(0, 10) : '');
+                return invDate === todayDateStr;
+            });
+
+            countElem.innerText = todaySales.length;
+            
+            let sumSales = todaySales.reduce((acc, inv) => acc + inv.total, 0);
+            let sumProfit = todaySales.reduce((acc, inv) => acc + inv.profit, 0);
+
+            totalSalesElem.innerText = sumSales + ' د.ع';
+            totalProfitElem.innerText = sumProfit + ' د.ع';
+
+            if (todaySales.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8;">لا توجد فواتير نشطة في جدول اليوم الحالي</td></tr>`;
+            } else {
+                historyBody.innerHTML = '';
+                todaySales.slice().reverse().forEach(inv => {
+                    let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '';
+                    let isReturn = inv.type === 'return';
+                    let isDebt = inv.type === 'debt';
+                    let isPay = inv.type === 'debt_payment';
+                    
+                    let typeBadge = '<span style="color:#16a34a; font-weight:bold;">🛒 بيع نقد</span>';
+                    if (isReturn) typeBadge = '<span style="color:#ef4444; font-weight:bold;">↩️ مردود</span>';
+                    if (isDebt) typeBadge = '<span style="color:#d97706; font-weight:bold;">📖 آجل (معلق)</span>';
+                    if (isPay) typeBadge = '<span style="color:#2563eb; font-weight:bold;">💰 تسديد دين</span>';
+                    
+                    let customerDetails = itemsDesc;
+                    if (isDebt) customerDetails = `<strong>الزبون: ${inv.customer}</strong><br><small>فاتورة معلقة (${inv.originalTotal} د.ع)</small>`;
+                    if (isPay) customerDetails = `<strong>تسديد دين من: ${inv.customer}</strong>`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${inv.invoiceNo}</td>
+                        <td>${inv.time}</td>
+                        <td>${typeBadge}</td>
+                        <td>${customerDetails}</td>
+                        <td>${inv.discount || 0} د.ع</td>
+                        <td style="${isReturn ? 'color:#ef4444; font-weight:bold;' : ''}">${inv.total} د.ع</td>
+                        <td style="color: ${isReturn ? '#ef4444' : 'var(--green)'}; font-weight: bold;">${inv.profit} د.ع</td>
+                    `;
+                    historyBody.appendChild(tr);
+                });
+            }
+
             filterCustomReport();
+        }
+
+        function filterCustomReport() {
+            const startRaw = document.getElementById('report-start-date').value;
+            const endRaw = document.getElementById('report-end-date').value;
+            
+            const startDate = parseInputDate(startRaw);
+            const endDate = parseInputDate(endRaw);
+
+            const tableBody = document.getElementById('custom-report-table-body');
+            const salesElem = document.getElementById('custom-report-sales');
+            const profitElem = document.getElementById('custom-report-profit');
+            const countElem = document.getElementById('custom-report-count');
+
+            if (!startDate || !endDate) {
+                salesElem.innerText = '0 د.ع';
+                profitElem.innerText = '0 د.ع';
+                countElem.innerText = '0';
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">أدخل تاريخ البداية والنهاية (يوم / شهر / سنة) أو انقر على "مبيعات هذا الشهر"</td></tr>`;
+                return;
+            }
+
+            let allSales = getAllSalesCombined();
+
+            const filtered = allSales.filter(inv => {
+                let invDate = inv.date || (inv.time ? inv.time.slice(0, 10) : '');
+                return invDate >= startDate && invDate <= endDate;
+            });
+
+            let totalSales = filtered.reduce((acc, inv) => acc + inv.total, 0);
+            let totalProfit = filtered.reduce((acc, inv) => acc + inv.profit, 0);
+
+            salesElem.innerText = totalSales + ' د.ع';
+            profitElem.innerText = totalProfit + ' د.ع';
+            countElem.innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد فواتير مسجلة في هذه الفترة المحددة</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            filtered.slice().reverse().forEach(inv => {
+                let itemsDesc = inv.items ? inv.items.map(i => `${i.name} (${i.qty})`).join(', ') : '-';
+                let isReturn = inv.type === 'return';
+                let isDebt = inv.type === 'debt';
+                let isPay = inv.type === 'debt_payment';
+
+                let typeBadge = '<span style="color:#16a34a; font-weight:bold;">🛒 بيع</span>';
+                if (isReturn) typeBadge = '<span style="color:#ef4444; font-weight:bold;">↩️ مردود</span>';
+                if (isDebt) typeBadge = '<span style="color:#d97706; font-weight:bold;">📖 دين معلق</span>';
+                if (isPay) typeBadge = '<span style="color:#2563eb; font-weight:bold;">💰 تسديد دين</span>';
+
+                let customerDetails = itemsDesc;
+                if (isDebt) customerDetails = `<strong>الزبون: ${inv.customer}</strong> (آجل)`;
+                if (isPay) customerDetails = `<strong>استلام دين من الزبون: ${inv.customer}</strong>`;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${inv.invoiceNo}</td>
+                    <td>${inv.time}</td>
+                    <td>${typeBadge}</td>
+                    <td>${customerDetails}</td>
+                    <td style="${isReturn ? 'color:#ef4444; font-weight:bold;' : ''}"><strong>${inv.total} د.ع</strong></td>
+                    <td style="color: ${isReturn ? '#ef4444' : 'var(--green)'}; font-weight: bold;">${inv.profit} د.ع</td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
 
         function resetCustomReportDates() {
             document.getElementById('report-start-date').value = '';
             document.getElementById('report-end-date').value = '';
-            document.getElementById('custom-report-sales').innerText = '0 د.ع';
-            document.getElementById('custom-report-profit').innerText = '0 د.ع';
-            document.getElementById('custom-report-count').innerText = '0';
-            document.getElementById('custom-report-table-body').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">الرجاء تحديد الفترة لعرض التفاصيل</td></tr>`;
-        }
-
-        function formatDateInput(input) {
-            let v = input.value.replace(/\D/g, '');
-            if (v.length >= 5 && v.length <= 6) {
-                input.value = v.substring(0, 4) + '-' + v.substring(4, 6);
-            } else if (v.length > 6) {
-                input.value = v.substring(0, 4) + '-' + v.substring(4, 6) + '-' + v.substring(6, 8);
-            }
+            filterCustomReport();
         }
 
         function resetDailyAccount() {
-            if (confirm('هل أنت متأكد من تصفير الحساب اليومي؟ سيتم أرشفة مبيعات اليوم ويبقى السجل الشهري محفوظاً بالكامل.')) {
+            if (salesHistory.length === 0) {
+                alert('لا توجد مبيعات في جدول اليوم لتصفيرها.');
+                return;
+            }
+            if (confirm('هل أنت متأكد من تصفير الحساب اليومي؟ سيتم أرشفة الفواتير اليومية بأمان لتظل موجودة في تقارير الشهر دون مسح بياناتك.')) {
                 archivedSales.push(...salesHistory);
                 salesHistory = [];
                 saveData();
                 refreshAllViews();
-                alert('تم تصفير الحساب اليومي وأرشفة الحركات بنجاح!');
+                alert('تم تصفير الحساب اليومي ونقل البيانات إلى أرشيف التقارير بنجاح!');
             }
         }
 
@@ -2088,57 +2333,97 @@
             tbody.innerHTML = '';
             users.forEach((user, index) => {
                 const tr = document.createElement('tr');
-                let roleName = user.role === 'admin' ? 'مدير' : 'موظف';
-                let deleteBtn = user.username !== 'admin' ? `<button class="btn btn-danger" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="deleteUser('${user.username}')">حذف</button>` : '';
-                tr.innerHTML = `<td><strong>${user.username}</strong></td><td>${user.password}</td><td>${roleName}</td><td>${deleteBtn}</td>`;
+                tr.innerHTML = `
+                    <td>${user.username}</td>
+                    <td><input type="text" value="${user.password}" id="up-pass-${index}" style="padding: 0.3rem; width: 100px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 4px;"></td>
+                    <td>
+                        <select id="up-role-${index}" style="padding: 0.3rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 4px;">
+                            <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>موظف</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>مدير</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="updateUser(${index})">حفظ التعديل</button>
+                        ${user.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteUser(${index})">حذف</button>` : ''}
+                    </td>
+                `;
                 tbody.appendChild(tr);
             });
         }
 
-        function deleteUser(username) {
-            if (confirm(`هل أنت متأكد من حذف المستخدم [${username}]؟`)) {
-                users = users.filter(u => u.username !== username);
+        function updateUser(index) {
+            const newPass = document.getElementById(`up-pass-${index}`).value.trim();
+            const newRole = document.getElementById(`up-role-${index}`).value;
+            users[index].password = newPass;
+            users[index].role = newRole;
+            saveData();
+            refreshAllViews();
+            alert('تم تحديث بيانات المستخدم بنجاح!');
+        }
+
+        function deleteUser(index) {
+            if (users[index].username === 'admin') {
+                alert('لا يمكن حذف حساب المدير الأساسي!');
+                return;
+            }
+            if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
+                users.splice(index, 1);
                 saveData();
                 refreshAllViews();
             }
         }
 
         function downloadBackup() {
-            const systemData = {
-                users, warehouseItems, products, debts, debtPayments, salesHistory, archivedSales, invoiceCounter, telegramConfig
+            const backupData = {
+                users,
+                warehouseItems,
+                products,
+                debts,
+                debtPayments,
+                salesHistory,
+                archivedSales,
+                invoiceCounter,
+                offlineQueue,
+                telegramConfig
             };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(systemData, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", "sayed_market_backup_" + new Date().toISOString().split('T')[0] + ".json");
-            dlAnchorElem.click();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "sayed_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
 
         function restoreBackup(event) {
-            const fileReader = new FileReader();
-            if (event.target.files[0]) {
-                fileReader.readAsText(event.target.files[0], "UTF-8");
-                fileReader.onload = function(e) {
-                    try {
-                        const parsed = JSON.parse(e.target.result);
-                        users = parsed.users || users;
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.users && parsed.products) {
+                        users = parsed.users;
                         warehouseItems = parsed.warehouseItems || [];
-                        products = parsed.products || [];
+                        products = parsed.products;
                         debts = parsed.debts || [];
                         debtPayments = parsed.debtPayments || [];
                         salesHistory = parsed.salesHistory || [];
                         archivedSales = parsed.archivedSales || [];
                         invoiceCounter = parsed.invoiceCounter || 1;
+                        offlineQueue = parsed.offlineQueue || [];
                         telegramConfig = parsed.telegramConfig || { token: '', chatId: '' };
-
                         saveData();
                         refreshAllViews();
-                        alert('✅ تم استرجاع النسخة الاحتياطية بنجاح!');
-                    } catch (err) {
-                        alert('❌ الملف غير صالح أو تالف.');
+                        alert('تم استرجاع النسخة الاحتياطية بنجاح!');
+                    } else {
+                        alert('ملف النسخة الاحتياطية غير صالح!');
                     }
+                } catch (err) {
+                    alert('حدث خطأ أثناء قراءة الملف.');
                 }
-            }
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
