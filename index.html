@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسواق سيف - نظام الكاشير المتكامل ونظام الديون</title>
+    <title>أسواق الباشوات - نظام الكاشير المتكامل ونظام الديون</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -11,12 +11,14 @@
             --green: #16a34a;
             --danger: #dc2626;
             --warning: #d97706;
-            --bg: #f8fafc;
+            --bg: #f1f5f9;
             --card: #ffffff;
             --text: #1e293b;
             --border: #cbd5e1;
             --sidebar-bg: #0f172a;
-            --table-header: #f1f5f9;
+            --table-header: #f8fafc;
+            --shadow-3d: 0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-btn: 0 4px 12px rgba(37, 99, 235, 0.25);
         }
 
         body.dark-mode {
@@ -31,6 +33,8 @@
             --border: #374151;
             --sidebar-bg: #030712;
             --table-header: #1f2937;
+            --shadow-3d: 0 8px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+            --shadow-btn: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         * {
@@ -56,7 +60,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: #0f172a;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             z-index: 99999;
             display: flex;
             align-items: center;
@@ -64,17 +68,39 @@
         }
 
         .login-card {
-            background: white;
+            background: var(--card);
             padding: 2.5rem;
-            border-radius: 16px;
+            border-radius: 20px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             text-align: center;
-            color: #1e293b;
+            color: var(--text);
+            border: 1px solid var(--border);
         }
 
-        .login-card h2 { margin-bottom: 1.5rem; color: #0f172a; font-size: 1.3rem; line-height: 1.6; }
+        .login-card h2 { 
+            margin-bottom: 1rem; 
+            color: var(--text); 
+            font-size: 1.35rem; 
+            line-height: 1.6; 
+            font-weight: 800;
+        }
+
+        .login-icon-box {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(22, 163, 74, 0.15));
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.1);
+        }
 
         .sidebar {
             position: fixed;
@@ -90,7 +116,7 @@
             gap: 0.8rem;
             z-index: 2000;
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: -5px 0 15px rgba(0,0,0,0.15);
+            box-shadow: -5px 0 20px rgba(0,0,0,0.25);
             overflow: hidden;
             white-space: nowrap;
         }
@@ -114,7 +140,7 @@
         .user-badge {
             background: rgba(255, 255, 255, 0.05);
             padding: 0.6rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.85rem;
             color: #94a3b8;
             margin-bottom: 0.5rem;
@@ -122,6 +148,7 @@
             align-items: center;
             gap: 10px;
             overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
         .user-badge span.icon { min-width: 35px; text-align: center; font-size: 1.1rem; color: #38bdf8; }
@@ -131,7 +158,7 @@
             border: none;
             color: #cbd5e1;
             padding: 0.8rem 0.6rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.95rem;
             cursor: pointer;
             display: flex;
@@ -143,9 +170,9 @@
         }
 
         .menu-btn span.icon { font-size: 1.2rem; min-width: 35px; text-align: center; }
-        .menu-btn:hover, .menu-btn.active { background: var(--accent); color: white; }
-        .menu-btn.logout { background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
-        .menu-btn.logout:hover { background: var(--danger); }
+        .menu-btn:hover, .menu-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .menu-btn.logout { background: rgba(255, 255, 255, 0.08); color: #f8fafc; }
+        .menu-btn.logout:hover { background: var(--danger); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
 
         .developer-footer {
             margin-top: auto;
@@ -187,29 +214,33 @@
             background: var(--card);
             color: var(--text);
             padding: 1.2rem 1rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 14px;
+            box-shadow: var(--shadow-3d);
             text-align: center;
             cursor: pointer;
-            border: 2px solid transparent;
+            border: 1px solid var(--border);
             user-select: none;
-            transition: all 0.15s ease-in-out;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
-        .product-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-        .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--text); }
-        .product-card .price { color: var(--green); font-weight: 800; font-size: 1.1rem; }
+        .product-card:hover { 
+            border-color: var(--accent); 
+            transform: translateY(-4px); 
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.15);
+        }
+        .product-card h4 { font-size: 1.1rem; margin-bottom: 0.4rem; color: var(--text); font-weight: 700; }
+        .product-card .price { color: var(--green); font-weight: 800; font-size: 1.15rem; }
         .product-card .qty { color: #94a3b8; font-size: 0.85rem; margin-top: 0.4rem; }
 
         .product-card.out-of-stock {
             background: #fef2f2 !important;
-            border: 2px solid #ef4444 !important;
+            border: 1px solid #ef4444 !important;
         }
 
         body.dark-mode .product-card.out-of-stock {
             background: #2c0b0e !important;
-            border: 2px solid #ef4444 !important;
+            border: 1px solid #ef4444 !important;
         }
 
         .product-card.out-of-stock h4, .product-card.out-of-stock .qty {
@@ -225,15 +256,15 @@
             flex: 1;
             background: var(--card);
             color: var(--text);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-3d);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             min-width: 340px;
             height: calc(100vh - 3rem);
-            border: 2px solid transparent;
+            border: 1px solid var(--border);
             position: relative;
         }
 
@@ -267,13 +298,19 @@
 
         .cart-search-input {
             width: 100%;
-            padding: 0.7rem 0.8rem;
+            padding: 0.75rem 0.9rem;
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 10px;
             background: var(--bg);
             color: var(--text);
             font-size: 0.95rem;
             outline: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        .cart-search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15), inset 0 2px 4px rgba(0,0,0,0.03);
         }
 
         .cart-search-results {
@@ -283,11 +320,11 @@
             right: 0;
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 10px;
             max-height: 200px;
             overflow-y: auto;
             z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
             display: none;
         }
 
@@ -316,15 +353,27 @@
         }
 
         .cart-item-controls { display: flex; align-items: center; gap: 6px; }
-        .qty-btn { background: var(--border); color: var(--text); border: none; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .qty-btn { 
+            background: var(--bg); 
+            color: var(--text); 
+            border: 1px solid var(--border); 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            transition: all 0.15s;
+        }
+        .qty-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
         
         .remove-item-btn {
-            background: rgba(220, 38, 38, 0.15);
+            background: rgba(220, 38, 38, 0.12);
             color: #dc2626;
-            border: 1px solid #dc2626;
-            width: 26px;
-            height: 26px;
-            border-radius: 6px;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             font-size: 0.8rem;
@@ -332,69 +381,108 @@
             align-items: center;
             justify-content: center;
             margin-right: 4px;
+            transition: all 0.15s;
         }
 
-        .remove-item-btn:hover { background: #dc2626; color: white; }
+        .remove-item-btn:hover { background: #dc2626; color: white; box-shadow: 0 2px 6px rgba(220,38,38,0.3); }
 
         .cart-summary { border-top: 2px dashed var(--border); padding-top: 0.8rem; }
         .cart-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 1rem; }
         .cart-row.total { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-top: 0.5rem; margin-bottom: 1rem; }
         
-        .discount-input-group input { width: 90px; padding: 0.4rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; font-weight: bold; text-align: center; }
+        .discount-input-group input { width: 90px; padding: 0.5rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 8px; font-weight: bold; text-align: center; }
 
         .btn {
             background: var(--accent);
             color: white;
             border: none;
             padding: 0.8rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
             gap: 8px;
             justify-content: center;
+            box-shadow: var(--shadow-btn);
         }
 
-        .btn:hover { opacity: 0.9; }
-        .btn-green { background: var(--green); }
-        .btn-danger { background: var(--danger); }
-        .btn-warning { background: var(--warning); color: #fff; }
+        .btn:hover { 
+            opacity: 0.95; 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+        }
+        .btn:active { transform: translateY(0); }
+        .btn-green { background: var(--green); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+        .btn-green:hover { box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35); }
+        .btn-danger { background: var(--danger); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
+        .btn-danger:hover { box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35); }
+        .btn-warning { background: var(--warning); color: #fff; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25); }
+        .btn-warning:hover { box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35); }
 
         .content-box {
             background: var(--card);
             color: var(--text);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 1.8rem;
+            border-radius: 14px;
+            box-shadow: var(--shadow-3d);
             width: 100%;
+            border: 1px solid var(--border);
         }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .form-group { display: flex; flex-direction: column; gap: 0.4rem; text-align: right; }
-        .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--text); }
-        .form-group input, .form-group select { padding: 0.7rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; font-size: 1rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; margin-top: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; text-align: right; }
+        .form-group label { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+        .form-group input, .form-group select { 
+            padding: 0.75rem 0.9rem; 
+            border: 1px solid var(--border); 
+            background: var(--bg); 
+            color: var(--text); 
+            border-radius: 10px; 
+            font-size: 1rem; 
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15), inset 0 2px 4px rgba(0,0,0,0.02);
+        }
 
-        .custom-table { width: 100%; border-collapse: collapse; margin-top: 1rem; color: var(--text); }
-        .custom-table th, .custom-table td { padding: 0.8rem 1rem; text-align: right; border-bottom: 1px solid var(--border); }
-        .custom-table th { background-color: var(--table-header); color: var(--text); font-weight: bold; }
+        .custom-table { width: 100%; border-collapse: collapse; margin-top: 1rem; color: var(--text); border-radius: 10px; overflow: hidden; }
+        .custom-table th, .custom-table td { padding: 0.9rem 1rem; text-align: right; border-bottom: 1px solid var(--border); }
+        .custom-table th { background-color: var(--table-header); color: var(--text); font-weight: 800; font-size: 0.95rem; }
+        .custom-table tr { transition: background 0.15s; }
+        .custom-table tbody tr:hover { background-color: rgba(37, 99, 235, 0.04); }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
-        .stat-card { background: var(--card); color: var(--text); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1.2rem; }
-        .stat-card .icon-box { font-size: 1.8rem; padding: 0.8rem 1rem; border-radius: 10px; }
+        .stat-card { 
+            background: var(--card); 
+            color: var(--text); 
+            padding: 1.5rem; 
+            border-radius: 14px; 
+            box-shadow: var(--shadow-3d); 
+            display: flex; 
+            align-items: center; 
+            gap: 1.2rem; 
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-card .icon-box { font-size: 1.8rem; padding: 0.9rem 1.1rem; border-radius: 12px; box-shadow: inset 0 2px 5px rgba(255,255,255,0.2); }
         .stat-card.blue .icon-box { background: rgba(2, 132, 199, 0.15); color: #0284c7; }
         .stat-card.green .icon-box { background: rgba(21, 128, 61, 0.15); color: var(--green); }
         .stat-card.purple .icon-box { background: rgba(147, 51, 234, 0.15); color: #9333ea; }
         .stat-card.orange .icon-box { background: rgba(217, 119, 6, 0.15); color: #d97706; }
-        .stat-info h4 { font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.3rem; }
+        .stat-info h4 { font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.3rem; font-weight: 700; }
         .stat-info div { font-size: 1.4rem; font-weight: 800; color: var(--text); }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
 
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-switch { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider-switch:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider-switch { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+        .slider-switch:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         input:checked + .slider-switch { background-color: var(--accent); }
         input:checked + .slider-switch:before { transform: translateX(26px); }
 
@@ -404,7 +492,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(4px);
             z-index: 9999;
             display: none;
             align-items: center;
@@ -414,29 +503,36 @@
         .modal-card {
             background: var(--card);
             color: var(--text);
-            padding: 2rem;
-            border-radius: 16px;
+            padding: 2.2rem;
+            border-radius: 18px;
             width: 90%;
             max-width: 800px;
             max-height: 85vh;
             overflow-y: auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             position: relative;
+            border: 1px solid var(--border);
         }
 
         .close-modal-btn {
             position: absolute;
-            top: 1rem;
-            left: 1rem;
+            top: 1.2rem;
+            left: 1.2rem;
             background: var(--danger);
             color: white;
             border: none;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(220,38,38,0.3);
+            transition: transform 0.2s;
         }
+        .close-modal-btn:hover { transform: scale(1.1); }
 
         .clickable-customer {
             color: var(--accent);
@@ -452,11 +548,12 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: bold;
             margin-right: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
         #network-status-badge.online { background: rgba(22, 163, 74, 0.15); color: var(--green); border: 1px solid var(--green); }
         #network-status-badge.offline { background: rgba(220, 38, 38, 0.15); color: var(--danger); border: 1px solid var(--danger); }
@@ -466,13 +563,14 @@
 
     <div id="login-overlay">
         <div class="login-card">
-            <h2>أهلاً وسهلاً بنظام كاشير أسواق سيف</h2>
+            <div class="login-icon-box">🛒</div>
+            <h2>أهلاً وسهلاً بنظام كاشير أسواق الباشوات</h2>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label>اسم الموظف</label>
-                    <input type="text" id="login-username" required placeholder="مثال: سيف" style="text-align: center;">
+                    <input type="text" id="login-username" required placeholder="مثال: الباشا" style="text-align: center;">
                 </div>
-                <button type="submit" class="btn btn-green" style="width: 100%; font-size: 1.1rem;">دخول</button>
+                <button type="submit" class="btn btn-green" style="width: 100%; font-size: 1.1rem; padding: 0.9rem;">دخول</button>
             </form>
         </div>
     </div>
@@ -484,7 +582,7 @@
             <h2 id="modal-customer-title" style="color: var(--accent); margin-bottom: 0.3rem;">📋 كشف حساب الزبون</h2>
             <p id="modal-customer-phone" style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 1rem;"></p>
             
-            <div style="background: var(--table-header); padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: var(--table-header); padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
                 <span>المبلغ الكلي المتبقي على الزبون:</span>
                 <strong id="modal-customer-total" style="font-size: 1.3rem; color: var(--danger);">0 د.ع</strong>
             </div>
@@ -508,7 +606,7 @@
     <div class="sidebar">
         <div class="sidebar-brand">
             <span class="icon">🛒</span>
-            <h2>أسواق سيف</h2>
+            <h2>أسواق الباشوات</h2>
         </div>
 
         <div class="user-badge">
@@ -525,8 +623,6 @@
             <span class="icon">📖</span>
             <span>سجل الديون (الآجل)</span>
         </button>
-
-        <!-- تم إلغاء أيقونة وصفحة المخزن تماماً بناءً على طلبك -->
 
         <button class="menu-btn admin-only" id="btn-shop" onclick="switchTab('shop')">
             <span class="icon">🏬</span>
@@ -571,7 +667,7 @@
             <div id="network-status-badge" class="online">
                 <span id="net-dot">🟢</span> <span id="net-text">متصل بالإنترنت</span>
             </div>
-            <div id="offline-queue-badge" style="display: none; background: rgba(217, 119, 6, 0.15); color: var(--warning); border: 1px solid var(--warning); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">
+            <div id="offline-queue-badge" style="display: none; background: rgba(217, 119, 6, 0.15); color: var(--warning); border: 1px solid var(--warning); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">
                 ⏳ عمليات معلقة في الطابور (<span id="queue-count">0</span>)
             </div>
         </div>
@@ -586,7 +682,7 @@
             <div class="cart-container" id="main-cart-card">
                 <div>
                     <label style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.3rem; display: block;">نوع الفاتورة الحالية:</label>
-                    <select id="invoice-type" onchange="toggleInvoiceType()" style="width: 100%; padding: 0.6rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text);">
+                    <select id="invoice-type" onchange="toggleInvoiceType()" style="width: 100%; padding: 0.7rem; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
                         <option value="sale">🛒 فاتورة مبيعات (نقد) </option>
                         <option value="debt">📖 فاتورة آجل (دين على زبون)</option>
                         <option value="return">↩️ مردود مبيعات (ترجيع)</option>
@@ -725,7 +821,7 @@
                 <h2>📦 إدخال فاتورة مشتريات جديدة (أكثر من مادة)</h2>
                 <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem;">أدخل الباركود لاسترجاع اسم المنتج وسعر التكلفة السابق بشكل تلقائي.</p>
                 
-                <form id="add-purchase-item-form" onsubmit="handleAddToPurchaseInvoice(event)" style="margin-top: 1.2rem; background: var(--table-header); padding: 1rem; border-radius: 10px;">
+                <form id="add-purchase-item-form" onsubmit="handleAddToPurchaseInvoice(event)" style="margin-top: 1.2rem; background: var(--table-header); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border);">
                     <h4 style="margin-bottom: 0.8rem; color: var(--accent);">إضافة مادة للفاتورة الحالية</h4>
                     <div class="form-grid">
                         <div class="form-group">
@@ -771,7 +867,7 @@
                         </tbody>
                     </table>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; background: rgba(22, 163, 74, 0.1); padding: 1.2rem; border-radius: 10px; border: 1px solid var(--green);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem; background: rgba(22, 163, 74, 0.1); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--green);">
                         <div>
                             <span style="font-size: 0.9rem; color: #94a3b8; display: block;">سعر إجمالي الفاتورة (التكلفة الكلية):</span>
                             <strong id="purchase-invoice-total-val" style="font-size: 1.5rem; color: var(--green);">0 د.ع</strong>
@@ -868,7 +964,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; background: var(--table-header); padding: 1rem; border-radius: 8px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; background: var(--table-header); padding: 1.2rem; border-radius: 10px; border: 1px solid var(--border);">
                     <div>
                         <span style="font-size: 0.85rem; color: #94a3b8;">إجمالي مقبوضات الفترة:</span>
                         <div id="custom-report-sales" style="font-size: 1.2rem; font-weight: bold; color: var(--green);">0 د.ع</div>
@@ -935,7 +1031,7 @@
                         </div>
                         <div class="form-group">
                             <label>الصلاحية</label>
-                            <select id="new-emp-role" required style="padding: 0.7rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px;">
+                            <select id="new-emp-role" required style="padding: 0.75rem 0.9rem; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px;">
                                 <option value="admin">مدير - Admin (صلاحية كاملة)</option>
                                 <option value="cashier">كاشير - Cashier (نقطة البيع فقط)</option>
                             </select>
@@ -1037,7 +1133,7 @@
                 telegramConfig: telegramConfig
             };
             
-            localStorage.setItem('sayed_market_db', JSON.stringify(systemData));
+            localStorage.setItem('bashawat_market_db', JSON.stringify(systemData));
 
             if (currentUser) {
                 localStorage.setItem('cashier_current_user', JSON.stringify(currentUser));
@@ -1047,7 +1143,7 @@
         }
 
         function loadData() {
-            const savedDb = localStorage.getItem('sayed_market_db');
+            const savedDb = localStorage.getItem('bashawat_market_db') || localStorage.getItem('sayed_market_db');
             if (savedDb) {
                 try {
                     const data = JSON.parse(savedDb);
@@ -1138,7 +1234,7 @@
             }
 
             const url = `https://api.telegram.org/bot${token}/sendMessage`;
-            const msg = "🔔 *اختبار نظام أسواق سيف*\n\nمرحباً، بوت الإشعارات يعمل بنجاح وجاهز لاستلام تنبيهات المبيعات والديون والمشتريات!";
+            const msg = "🔔 *اختبار نظام أسواق الباشوات*\n\nمرحباً، بوت الإشعارات يعمل بنجاح وجاهز لاستلام تنبيهات المبيعات والديون والمشتريات!";
             
             fetch(url, {
                 method: 'POST',
@@ -1633,7 +1729,7 @@
                 if (invType === 'debt') {
                     tgMsg = `📖 *فاتورة دين / آجل جديدة*\n\n👤 *الزبون:* ${customerName}\n👨‍💼 *الموظف الكاشير:* ${employeeName}\n💰 *المبلغ الإجمالي:* ${total} د.ع\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد المشتراة:*\n${itemsListText}`;
                 } else if (invType === 'sale') {
-                    tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n👨‍‍💼 *الموظف الكاشير:* ${employeeName}\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
+                    tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n👨‍💼 *الموظف الكاشير:* ${employeeName}\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
                 }
 
                 if (tgMsg) {
@@ -2306,7 +2402,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "sayed_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
+            downloadAnchor.setAttribute("download", "bashawat_market_backup_" + new Date().toISOString().slice(0,10) + ".json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
