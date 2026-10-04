@@ -74,7 +74,7 @@
             color: #1e293b;
         }
 
-        .login-card h2 { margin-bottom: 1.5rem; color: #0f172a; }
+        .login-card h2 { margin-bottom: 1.5rem; color: #0f172a; font-size: 1.3rem; line-height: 1.6; }
 
         .sidebar {
             position: fixed;
@@ -466,16 +466,11 @@
 
     <div id="login-overlay">
         <div class="login-card">
-            <h2 style="margin-bottom: 0.5rem; color: var(--accent);">🔐 تسجيل الدخول</h2>
-            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem;">نظام حفظ تلقائي ودائم على الجهاز</p>
+            <h2>أهلاً وسهلاً بنظام كاشير أسواق الباشوات</h2>
             <form onsubmit="handleLogin(event)">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label>اسم المستخدم</label>
-                    <input type="text" id="login-username" required placeholder="أدخل اليوزر">
-                </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>كلمة السر</label>
-                    <input type="password" id="login-password" required placeholder="أدخل الباسورد">
+                    <label>اسم الموظف</label>
+                    <input type="text" id="login-username" required placeholder="مثال: سيف" style="text-align: center;">
                 </div>
                 <button type="submit" class="btn btn-green" style="width: 100%; font-size: 1.1rem;">دخول</button>
             </form>
@@ -982,34 +977,12 @@
             </div>
 
             <div class="content-box">
-                <h2>👥 قائمة المستخدمين وتعديل الحسابات</h2>
-                <form id="add-user-form" onsubmit="handleAddUser(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>اسم المستخدم (اليوزر)</label>
-                            <input type="text" id="new-username" placeholder="مثال: ali" required>
-                        </div>
-                        <div class="form-group">
-                            <label>كلمة السر (الباسورد)</label>
-                            <input type="text" id="new-password" placeholder="أدخل كلمة السر" required>
-                        </div>
-                        <div class="form-group">
-                            <label>الصلاحية</label>
-                            <select id="new-role">
-                                <option value="staff">موظف (نقطة البيع فقط)</option>
-                                <option value="admin">مدير/صلاحيات كاملة</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-green" style="margin-top: 1rem;">+ إضافة مستخدم جديد</button>
-                </form>
-
-                <h3 style="margin-top: 1.5rem;">المستخدمين الحاليين بالنظام</h3>
+                <h2>👥 قائمة المستخدمين وتعديل الصلاحيات</h2>
+                <h3 style="margin-top: 0.5rem; font-size: 1rem; color: #94a3b8;">المستخدمين الحاليين بالنظام</h3>
                 <table class="custom-table">
                     <thead>
                         <tr>
-                            <th>اليوزر (اسم المستخدم)</th>
-                            <th>كلمة السر</th>
+                            <th>اسم المستخدم</th>
                             <th>الصلاحية</th>
                             <th>إجراءات والتعديل</th>
                         </tr>
@@ -1032,11 +1005,7 @@
 
     <script>
         // المتغيرات الأساسية
-        let users = [
-            { username: 'admin', password: '123', role: 'admin' },
-            { username: 'cashier', password: '123', role: 'staff' },
-            { username: 'designer', password: '123', role: 'admin' }
-        ];
+        let users = [];
 
         let warehouseItems = [];
         let products = [];
@@ -1102,7 +1071,7 @@
             if (savedDb) {
                 try {
                     const data = JSON.parse(savedDb);
-                    users = data.users || users;
+                    users = data.users || [];
                     warehouseItems = data.warehouseItems || [];
                     products = data.products || [];
                     debts = data.debts || [];
@@ -1194,7 +1163,7 @@
             }
 
             const url = `https://api.telegram.org/bot${token}/sendMessage`;
-            const msg = "🔔 *اختبار نظام أسواق سيف*\n\nمرحباً سيف، بوت الإشعارات يعمل بنجاح وجاهز لاستلام تنبيهات المبيعات والديون والمشتريات!";
+            const msg = "🔔 *اختبار نظام أسواق سيف*\n\nمرحباً، بوت الإشعارات يعمل بنجاح وجاهز لاستلام تنبيهات المبيعات والديون والمشتريات!";
             
             fetch(url, {
                 method: 'POST',
@@ -1316,6 +1285,10 @@
                 applyRolePermissions();
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
+                setTimeout(() => {
+                    const loginInput = document.getElementById('login-username');
+                    if (loginInput) loginInput.focus();
+                }, 100);
             }
 
             document.addEventListener('click', function(e) {
@@ -1329,18 +1302,19 @@
 
         function handleLogin(e) {
             e.preventDefault();
-            const u = document.getElementById('login-username').value.trim();
-            const p = document.getElementById('login-password').value.trim();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            if (!usernameInput) return;
 
-            const found = users.find(user => user.username === u && user.password === p);
-            if (found) {
-                currentUser = found;
-                saveData();
-                document.getElementById('login-overlay').style.display = 'none';
-                applyRolePermissions();
-            } else {
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+            currentUser = { username: usernameInput, role: 'admin' };
+            
+            // تخزين الموظف في قائمة المستخدمين تلقائياً إذا لم يكن موجوداً مسبقاً
+            if (!users.some(u => u.username === usernameInput)) {
+                users.push({ username: usernameInput, role: 'admin' });
             }
+
+            saveData();
+            document.getElementById('login-overlay').style.display = 'none';
+            applyRolePermissions();
         }
 
         function logout() {
@@ -1348,29 +1322,23 @@
             saveData();
             document.getElementById('login-overlay').style.display = 'flex';
             document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
+            setTimeout(() => {
+                const loginInput = document.getElementById('login-username');
+                if (loginInput) loginInput.focus();
+            }, 100);
         }
 
         function applyRolePermissions() {
             if (!currentUser) return;
             document.getElementById('current-user-name').innerText = currentUser.username;
-            document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير' : 'موظف';
+            document.getElementById('current-user-role').innerText = 'مدير';
 
             const adminElements = document.querySelectorAll('.admin-only');
-            if (currentUser.role === 'staff') {
-                adminElements.forEach(el => el.style.display = 'none');
-                switchTab('pos');
-            } else {
-                adminElements.forEach(el => el.style.display = '');
-            }
+            adminElements.forEach(el => el.style.display = '');
             refreshAllViews();
         }
 
         function switchTab(tabId) {
-            if (currentUser && currentUser.role === 'staff' && tabId !== 'pos' && tabId !== 'debts') {
-                alert('عذراً، الصلاحيات المتاحة لك هي نقطة البيع والديون فقط.');
-                return;
-            }
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -1573,7 +1541,7 @@
         function renderCartSummary() {
             let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             let discountInput = document.getElementById('cart-discount');
-            let discount = discountInput && currentUser && currentUser.role === 'admin' ? parseFloat(discountInput.value) || 0 : 0;
+            let discount = discountInput ? parseFloat(discountInput.value) || 0 : 0;
             
             let total = subtotal - discount;
             if (total < 0) total = 0;
@@ -1598,7 +1566,7 @@
 
             let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             let discountInput = document.getElementById('cart-discount');
-            let discount = discountInput && currentUser && currentUser.role === 'admin' ? parseFloat(discountInput.value) || 0 : 0;
+            let discount = discountInput ? parseFloat(discountInput.value) || 0 : 0;
             let total = subtotal - discount;
             if (total < 0) total = 0;
 
@@ -1615,6 +1583,7 @@
 
             let recordTotal = total;
             let recordProfit = calculatedProfit;
+            let employeeName = currentUser ? currentUser.username : 'غير معروف';
 
             queueOrExecute('checkout_invoice', { cart: [...cart], invType, customerName, total, calculatedProfit }, () => {
                 if (invType === 'return') {
@@ -1658,6 +1627,7 @@
                     invoiceNo: invoiceCounter++,
                     type: invType,
                     customer: invType === 'debt' ? customerName : '',
+                    employee: employeeName,
                     date: dateString,
                     time: fullDateStr,
                     items: [...cart],
@@ -1674,9 +1644,9 @@
                 let tgMsg = "";
 
                 if (invType === 'debt') {
-                    tgMsg = `📖 *فاتورة دين / آجل جديدة*\n\n👤 *الزبون:* ${customerName}\n💰 *المبلغ الإجمالي:* ${total} د.ع\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد المشتراة:*\n${itemsListText}`;
+                    tgMsg = `📖 *فاتورة دين / آجل جديدة*\n\n👤 *الزبون:* ${customerName}\n👨‍💼 *الموظف الكاشير:* ${employeeName}\n💰 *المبلغ الإجمالي:* ${total} د.ع\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد المشتراة:*\n${itemsListText}`;
                 } else if (invType === 'sale') {
-                    tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
+                    tgMsg = `🛒 *فاتورة مبيعات نقدية جديدة*\n\n👨‍‍💼 *الموظف الكاشير:* ${employeeName}\n💰 *المبلغ الصافي:* ${total} د.ع (خصم: ${discount} د.ع)\n🕒 *الوقت:* ${fullDateStr}\n\n📦 *المواد:*\n${itemsListText}`;
                 }
 
                 if (tgMsg) {
@@ -1902,6 +1872,7 @@
                     invoiceNo: invoiceCounter++,
                     type: 'debt_payment',
                     customer: debtObj.customer,
+                    employee: currentUser ? currentUser.username : 'غير معروف',
                     date: dateStrShort,
                     time: dateStr,
                     items: [],
@@ -2330,24 +2301,6 @@
             }
         }
 
-        function handleAddUser(e) {
-            e.preventDefault();
-            const u = document.getElementById('new-username').value.trim();
-            const p = document.getElementById('new-password').value.trim();
-            const r = document.getElementById('new-role').value;
-
-            if (users.some(user => user.username === u)) {
-                alert('اسم المستخدم موجود مسبقاً!');
-                return;
-            }
-
-            users.push({ username: u, password: p, role: r });
-            document.getElementById('add-user-form').reset();
-            saveData();
-            refreshAllViews();
-            alert('تمت إضافة المستخدم بنجاح!');
-        }
-
         function renderUsersTable() {
             const tbody = document.getElementById('users-table-body');
             if (!tbody) return;
@@ -2356,37 +2309,16 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${user.username}</td>
-                    <td><input type="text" value="${user.password}" id="up-pass-${index}" style="padding: 0.3rem; width: 100px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 4px;"></td>
+                    <td>مدير النظام</td>
                     <td>
-                        <select id="up-role-${index}" style="padding: 0.3rem; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 4px;">
-                            <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>موظف</option>
-                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>مدير</option>
-                        </select>
-                    </td>
-                    <td>
-                        <button class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="updateUser(${index})">حفظ التعديل</button>
-                        ${user.username !== 'admin' ? `<button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteUser(${index})">حذف</button>` : ''}
+                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="deleteUser(${index})">حذف</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function updateUser(index) {
-            const newPass = document.getElementById(`up-pass-${index}`).value.trim();
-            const newRole = document.getElementById(`up-role-${index}`).value;
-            users[index].password = newPass;
-            users[index].role = newRole;
-            saveData();
-            refreshAllViews();
-            alert('تم تحديث بيانات المستخدم بنجاح!');
-        }
-
         function deleteUser(index) {
-            if (users[index].username === 'admin') {
-                alert('لا يمكن حذف حساب المدير الأساسي!');
-                return;
-            }
             if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
                 users.splice(index, 1);
                 saveData();
@@ -2423,8 +2355,8 @@
             reader.onload = function(e) {
                 try {
                     const parsed = JSON.parse(e.target.result);
-                    if (parsed.users && parsed.products) {
-                        users = parsed.users;
+                    if (parsed.products) {
+                        users = parsed.users || [];
                         warehouseItems = parsed.warehouseItems || [];
                         products = parsed.products;
                         debts = parsed.debts || [];
