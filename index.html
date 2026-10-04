@@ -1120,6 +1120,22 @@
             }
         }
 
+        // دالة حساب مجموع المبيعات الكلي لهذا اليوم (حتى هذه اللحظة)
+        function getTodayTotalSalesSum() {
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = String(now.getMonth() + 1).padStart(2, '0');
+            let day = String(now.getDate()).padStart(2, '0');
+            let todayDateStr = `${year}-${month}-${day}`;
+
+            let todaySales = salesHistory.filter(inv => {
+                let invDate = inv.date || (inv.time ? inv.time.slice(0, 10) : '');
+                return invDate === todayDateStr;
+            });
+
+            return todaySales.reduce((acc, inv) => acc + inv.total, 0);
+        }
+
         // دالة إرسال الإشعارات إلى التليجرام (Telegram Bot API)
         function sendTelegramNotification(messageText) {
             if (!telegramConfig.token || !telegramConfig.chatId) {
@@ -1127,10 +1143,14 @@
                 return;
             }
 
+            // إضافة مجموع المبيعات الكلي لهذا اليوم في نهاية النص
+            let todayTotal = getTodayTotalSalesSum();
+            let finalMessage = messageText + `\n\n📈 *مجموع المبيعات الكلي لهذا اليوم:* ${todayTotal} د.ع`;
+
             const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
             const payload = {
                 chat_id: telegramConfig.chatId,
-                text: messageText,
+                text: finalMessage,
                 parse_mode: 'Markdown'
             };
 
@@ -2295,6 +2315,7 @@
             filterCustomReport();
         }
 
+        // تصفير الحساب اليومي (يقوم بترحيل المبيعات النشطة إلى الأرشيف وتصفير العداد لتبدأ مبيعات اليوم الجديد من الصفر)
         function resetDailyAccount() {
             if (salesHistory.length === 0) {
                 alert('لا توجد مبيعات في جدول اليوم لتصفيرها.');
