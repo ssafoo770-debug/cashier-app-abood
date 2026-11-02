@@ -561,20 +561,6 @@
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-card">
-            <div class="login-icon-box">🛒</div>
-            <h2>أهلاً وسهلاً بنظام كاشير أسواق الباشوات</h2>
-            <form onsubmit="handleLogin(event)">
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label>اسم الموظف</label>
-                    <input type="text" id="login-username" required placeholder="مثال: الباشا" style="text-align: center;">
-                </div>
-                <button type="submit" class="btn btn-green" style="width: 100%; font-size: 1.1rem; padding: 0.9rem;">دخول</button>
-            </form>
-        </div>
-    </div>
-
     <!-- نافذة كشف حساب الزبون التفصيلي -->
     <div id="customer-statement-modal" class="modal-overlay">
         <div class="modal-card">
@@ -1103,7 +1089,7 @@
         let offlineQueue = [];
 
         let savedSession = localStorage.getItem('cashier_current_user');
-        let currentUser = savedSession ? JSON.parse(savedSession) : null;
+        let currentUser = { username: "سيف", role: "admin" };
 
         if (localStorage.getItem('cashier_dark_mode') === 'true') {
             document.body.classList.add('dark-mode');
@@ -1350,16 +1336,10 @@
             initNetworkSensors();
             refreshAllViews();
 
-            if (currentUser) {
-                document.getElementById('login-overlay').style.display = 'none';
-                applyRolePermissions();
-            } else {
-                document.getElementById('login-overlay').style.display = 'flex';
-                setTimeout(() => {
-                    const loginInput = document.getElementById('login-username');
-                    if (loginInput) loginInput.focus();
-                }, 100);
-            }
+            // فتح النظام مباشرة بصلاحيات المدير دون شاشة تسجيل دخول
+            currentUser = { username: "سيف", role: "admin" };
+            applyRolePermissions();
+            switchTab('pos');
 
             document.addEventListener('click', function(e) {
                 const searchBox = document.querySelector('.cart-search-box');
@@ -1371,33 +1351,19 @@
         };
 
         function handleLogin(e) {
-            e.preventDefault();
-            const usernameInput = document.getElementById('login-username').value.trim();
-            if (!usernameInput) return;
-
-            let foundUser = users.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
-            
-            if (!foundUser) {
-                alert('اسم الموظف غير مسجل في النظام! الرجاء مراجعة المدير لإضافته.');
-                return;
-            }
-
-            currentUser = foundUser;
+            if (e) e.preventDefault();
+            currentUser = { username: "سيف", role: "admin" };
             saveData();
-            document.getElementById('login-overlay').style.display = 'none';
             applyRolePermissions();
             switchTab('pos');
         }
 
         function logout() {
-            currentUser = null;
+            // تسجيل الخروج معطل لأن النظام يفتح مباشرة دون شاشة دخول
+            currentUser = { username: "سيف", role: "admin" };
             saveData();
-            document.getElementById('login-overlay').style.display = 'flex';
-            document.getElementById('login-username').value = '';
-            setTimeout(() => {
-                const loginInput = document.getElementById('login-username');
-                if (loginInput) loginInput.focus();
-            }, 100);
+            applyRolePermissions();
+            switchTab('pos');
         }
 
         function applyRolePermissions() {
