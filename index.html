@@ -586,4 +586,58 @@
 
         <button class="menu-btn logout" onclick="logout()" style="display: none;">
             <span class="icon">🚪</span>
-            <span>تسجيل الخروج
+            <span>تسجيل الخروج</span>
+        </button>
+
+        <div class="developer-footer">
+            <div class="developer-info">
+                <span class="icon">💻</span>
+                <div class="dev-details">
+                    <span class="dev-name">المبرمج سيف سامر</span>
+                    <span class="dev-phone">07888001875</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content">
+        
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem;">
+            <div id="network-status-badge" class="online">
+                <span id="net-dot">🟢</span> <span id="net-text">متصل بالإنترنت</span>
+            </div>
+            <div id="offline-queue-badge" style="display: none; background: rgba(217, 119, 6, 0.15); color: var(--warning); border: 1px solid var(--warning); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">
+                ⏳ عمليات معلقة في الطابور (<span id="queue-count">0</span>)
+            </div>
+        </div>
+
+        <!-- 1. نقطة البيع -->
+        <div id="pos-view" class="view-section active">
+            <div class="products-container">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>المنتجات المتاحة في المحل</h3>
+                    <!-- زر فتح درج الكاشير يدوياً -->
+                    <button class="btn btn-purple" style="padding: 0.6rem 1rem; font-size: 0.95rem;" onclick="openCashDrawerManually()">
+                        🔓 فتح درج الكاشير
+                    </button>
+                </div>
+                <div class="products-grid" id="pos-products-grid"></div>
+            </div>
+
+            <div class="cart-container" id="main-cart-card">
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: bold; margin-bottom: 0.3rem; display: block;">نوع الفاتورة الحالية:</label>
+                    <select id="invoice-type" onchange="toggleInvoiceType()" style="width: 100%; padding: 0.7rem; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                        <option value="sale">🛒 فاتورة مبيعات (نقد) </option>
+                        <option value="debt">📖 فاتورة آجل (دين على زبون)</option>
+                        <option value="return">↩️ مردود مبيعات (ترجيع)</option>
+                    </select>
+
+                    <div id="customer-name-group" style="display: none; margin-top: 0.6rem;">
+                        <input type="text" id="customer-name-input" class="cart-search-input" list="registered-customers-list" placeholder="👤 اكتب اسم الزبون ثم اضغط Enter..." onkeydown="handleCustomerInputKey(event)" style="border-color: #d97706; font-weight: bold;">
+                        <datalist id="registered-customers-list"></datalist>
+                    </div>
+
+                    <div class="cart-search-box">
+                        <input type="text" id="cart-search-input" class="cart-search-input" placeholder="🔍 امسح الباركود أو اكتب اسم المنتج..." oninput="handleCartSearch(this.value)"
